@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Apply - Horizon</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">Horizon</a>
+      <nav class="nav-menu">
+        <a href="index.html#universities">Back</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="section contact">
+      <div class="container">
+        <div class="section-header">
+          <span>Application</span>
+          <h2 id="apply_title">Apply to</h2>
+          <p id="apply_sub">Please provide your contact details and upload the requested documents.</p>
+        </div>
+
+        <form class="contact-form" id="applyForm" enctype="multipart/form-data">
+          <input type="hidden" id="uniInput" name="university" />
+
+          <label>
+            Full Name
+            <input type="text" id="app_name" name="name" required />
+          </label>
+
+          <label>
+            Email
+            <input type="email" id="app_email" name="email" required />
+          </label>
+
+          <label>
+            Phone / WhatsApp
+            <input type="tel" id="app_phone" name="phone" placeholder="+90 5XX XXX XXXX" required />
+          </label>
+
+          <label>
+            Country
+            <select id="app_country" name="country" required>
+              <option value="">Select your country</option>
+              <option>Turkey</option>
+              <option>Afghanistan</option>
+              <option>United Kingdom</option>
+              <option>United States</option>
+              <option>Other</option>
+            </select>
+          </label>
+
+          <label>
+            Program
+            <select id="app_program" name="program" required>
+              <option value="">Select program</option>
+              <option>Medicine</option>
+              <option>Engineering</option>
+              <option>Business</option>
+              <option>Law</option>
+              <option>Other</option>
+            </select>
+          </label>
+
+          <label>
+            University Choice
+            <input type="text" id="app_university" name="university_text" />
+          </label>
+
+          <label>
+            Upload documents (optional) — PDFs or images (multiple allowed)
+            <input type="file" id="app_files" name="files" accept="application/pdf,image/*" multiple />
+          </label>
+
+          <label>
+            Message / Notes
+            <textarea id="app_message" name="message" rows="4"></textarea>
+          </label>
+
+          <button type="submit" class="button button-primary">Submit Application</button>
+        </form>
+
+        <p style="margin-top:1rem;color:var(--muted);font-size:0.95rem">Note: this page saves application details to Supabase, but it does not upload selected files. Configure your Supabase project and table, then replace the placeholder values in <code>lib/supabase.js</code>.</p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { supabase } from './lib/supabase.js';
+
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const uniParam = getQueryParam('uni') || '';
+      const uni = uniParam || 'Selected University';
+      const decodedUni = decodeURIComponent(uni);
+      document.getElementById('apply_title').textContent = 'Apply to ' + decodedUni;
+      document.getElementById('uniInput').value = decodedUni;
+      // populate visible university field
+      const uniField = document.getElementById('app_university');
+      if (uniField) uniField.value = decodedUni;
+
+      const form = document.getElementById('applyForm');
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const name = document.getElementById('app_name').value.trim();
+        const email = document.getElementById('app_email').value.trim();
+        const phone = document.getElementById('app_phone').value.trim();
+        const country = document.getElementById('app_country').value;
+        const program = document.getElementById('app_program').value;
+        const universityText = document.getElementById('app_university').value.trim() || decodedUni;
+        const message = document.getElementById('app_message').value.trim();
+        const files = Array.from(document.getElementById('app_files').files || []);
+
+        if (!name || !email || !phone || !country || !program) {
+          alert('Please fill name, email, phone, country and program.');
+          return;
+        }
+
+        const application = {
+          full_name: name,
+          email,
+          phone,
+          country,
+          university: universityText,
+          program,
+          message,
+          documents: files.length ? files.map((file) => file.name).join(', ') : null
+        };
+
+        const { data, error } = await supabase.from('applications').insert([application]);
+
+        if (error) {
+          console.error('Supabase insert error:', error);
+          alert('Unable to submit application right now. Please try again later.');
+          return;
+        }
+
+        alert('Application submitted successfully. We will contact you soon.');
+        form.reset();
+      });
+    });
+  </script>
+</body>
+</html>
