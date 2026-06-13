@@ -57,12 +57,7 @@ export default function Contact() {
           <p>{t('contact.description')}</p>
         </div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '3rem',
-          marginBottom: '3rem'
-        }}>
+        <div className="contact-grid">
           {/* Contact Information */}
           <div>
             <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary)' }}>{t('contact.info')}</h3>

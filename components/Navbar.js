@@ -26,6 +26,7 @@ export default function Navbar() {
   const handleLanguageChange = (lang) => {
     changeLanguage(lang);
     setLangMenuOpen(false);
+    setMobileMenuOpen(false);
   };
 
   const langNames = { en: 'English', tr: 'Türkçe', da: 'دری', ps: 'پښتو' };
@@ -46,24 +47,67 @@ export default function Navbar() {
             <a href="#programs" onClick={handleNavClick}>{t('nav.programs')}</a>
             <a href="#contact" onClick={handleNavClick}>{t('nav.contact')}</a>
             <a href="/admin/login" onClick={handleNavClick}>Admin</a>
+            <a href="#application" className="button button-primary button-small mobile-menu-apply" onClick={handleNavClick}>
+              {t('nav.apply')}
+            </a>
+            <div className="language-switcher mobile-language-switcher">
+              <button 
+                className="lang-toggle"
+                onClick={() => setLangMenuOpen(!langMenuOpen)}
+                aria-label="Change language"
+              >
+                {langNames[language]}
+              </button>
+              {langMenuOpen && (
+                <div className="lang-dropdown">
+                  <button 
+                    onClick={() => handleLanguageChange('en')}
+                    className={language === 'en' ? 'active' : ''}
+                  >
+                    English
+                  </button>
+                  <button 
+                    onClick={() => handleLanguageChange('tr')}
+                    className={language === 'tr' ? 'active' : ''}
+                  >
+                    Türkçe
+                  </button>
+                  <button 
+                    onClick={() => handleLanguageChange('da')}
+                    className={language === 'da' ? 'active' : ''}
+                  >
+                    دری
+                  </button>
+                  <button 
+                    onClick={() => handleLanguageChange('ps')}
+                    className={language === 'ps' ? 'active' : ''}
+                  >
+                    پښتو
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="navbar-mobile-social">
               <a
                 href="https://www.instagram.com/heceducons"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
+                onClick={handleNavClick}
               >Instagram</a>
               <a
                 href="https://www.facebook.com/profile.php?id=61590645456268"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Facebook"
+                onClick={handleNavClick}
               >Facebook</a>
               <a
                 href="https://whatsapp.com/channel/0029VbClkJs5q08dSxjVU32R"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp Channel"
+                onClick={handleNavClick}
               >WhatsApp</a>
             </div>
           </div>
@@ -153,7 +197,7 @@ export default function Navbar() {
               {t('nav.apply')}
             </Link>
             <button
-              className="hamburger"
+              className={`hamburger ${mobileMenuOpen ? 'active' : ''}`}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >

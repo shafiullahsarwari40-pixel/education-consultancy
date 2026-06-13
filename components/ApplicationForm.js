@@ -324,12 +324,12 @@ export default function ApplicationForm() {
 
   return (
     <>
-      <form className="form-grid" onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
+      <form className="form-grid application-form" onSubmit={handleSubmit}>
         <input type="hidden" name="university" value={formState.university} />
 
         <div>
           <label className="form-label">
-            {t('form.firstName')} <span className="form-required">*</span>
+            Full Name <span className="form-required">*</span>
           </label>
           <input
             name="full_name"
@@ -396,7 +396,7 @@ export default function ApplicationForm() {
           />
         </div>
 
-        <div style={{ gridColumn: '1 / -1' }}>
+        <div className="full-row">
           <label className="form-label">Full Address</label>
           <textarea
             name="address"
@@ -548,7 +548,7 @@ export default function ApplicationForm() {
 
         <div style={{ gridColumn: '1 / -1' }}>
           <label className="form-label">{t('form.documents')}</label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+          <div className="file-upload-grid">
             {[
               { key: 'passport', labelKey: 'form.passport' },
               { key: 'transcript', labelKey: 'form.transcript' },
@@ -579,7 +579,7 @@ export default function ApplicationForm() {
           </div>
         </div>
 
-        <div style={{ gridColumn: '1 / -1' }}>
+        <div className="full-row">
           <div id="recaptcha-widget" style={{ marginBottom: '1rem' }} />
         </div>
 
@@ -596,12 +596,11 @@ export default function ApplicationForm() {
           </div>
         )}
 
-        <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem' }}>
+        <div className="full-row form-submit-row">
           <button
             type="submit"
-            className="button button-primary button-large"
+            className="button button-primary button-large button-full-width"
             disabled={loading || !recaptchaVerified}
-            style={{ flexGrow: 1 }}
           >
             {loading ? t('form.submitting') : t('form.submit')}
           </button>
