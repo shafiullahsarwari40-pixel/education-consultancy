@@ -1,37 +1,74 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY || '';
+const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY || '';
 
-const serverClient = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-  : null;
+async function verifyRecaptcha(token) {
+  if (!RECAPTCHA_SECRET_KEY) {
+    return { success: true, disabled: true };
+  }
+
+  if (!token) {
+    return { success: false, error: 'Missing recaptcha token' };
+  }
+
+  const body = `secret=${encodeURIComponent(RECAPTCHA_SECRET_KEY)}&response=${encodeURIComponent(token)}`;
+  try {
+    const verifyResponse = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body,
+    });
+
+    const json = await verifyResponse.json();
+    return json;
+  } catch (err) {
+    console.error('reCAPTCHA verify fetch error:', err);
+    return { success: false, error: 'Failed to validate recaptcha token' };
+  }
+}
 
 export async function POST(request) {
-  if (!serverClient) {
+  if (!supabaseAdmin) {
     return NextResponse.json({ error: 'Server Supabase client not configured' }, { status: 500 });
   }
 
+  let formData;
   try {
-    const formData = await request.formData();
-    const full_name = formData.get('full_name');
-    const email = formData.get('email');
-    const phone = formData.get('phone');
-    const mother_name = formData.get('mother_name') || '';
-    const father_name = formData.get('father_name') || '';
-    const address = formData.get('address') || '';
-    const country = formData.get('country') || '';
-    const program = formData.get('program') || '';
-    const university = formData.get('university') || '';
-    const message = formData.get('message') || '';
+    formData = await request.formData();
+  } catch (err) {
+    console.error('Form data parse error:', err);
+    return NextResponse.json({ error: 'Unable to parse request body. The payload may be too large or malformed.' }, { status: 400 });
+  }
 
-    if (!full_name || !email || !phone) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  const full_name = formData.get('full_name');
+  const email = formData.get('email');
+  const phone = formData.get('phone');
+  const mother_name = formData.get('mother_name') || '';
+  const father_name = formData.get('father_name') || '';
+  const address = formData.get('address') || '';
+  const country = formData.get('country') || '';
+  const program = formData.get('program') || '';
+  const university = formData.get('university') || '';
+  const message = formData.get('message') || '';
+  const recaptchaToken = formData.get('recaptchaToken')?.toString() || '';
+
+  if (!full_name || !email || !phone) {
+    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  }
+
+  if (RECAPTCHA_SECRET_KEY) {
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken);
+    if (!recaptchaResult.success) {
+      console.error('reCAPTCHA failed:', recaptchaResult);
+      return NextResponse.json({ error: recaptchaResult['error-codes'] || recaptchaResult.error || 'reCAPTCHA verification failed' }, { status: 400 });
     }
+  }
 
-    // Step 1: Create application record
-    const { data: applicationData, error: appError } = await serverClient
+  try {
+    const { data: applicationData, error: appError } = await supabaseAdmin
       .from('applications')
       .insert([{ full_name, email, phone, mother_name, father_name, address, country, program, university, message }])
       .select();
@@ -43,20 +80,19 @@ export async function POST(request) {
     const applicationId = applicationData[0].id;
     const uploadBucket = 'application-uploads';
     const documents = {};
-
-    // Step 2: Upload files to storage
     const docTypes = ['passport', 'transcript', 'diploma', 'exam_sheet', 'id_card', 'photo'];
+
     for (const docType of docTypes) {
       const file = formData.get(docType);
-      if (!file) continue;
+      if (!file || typeof file === 'string') continue;
 
       try {
         const timestamp = Date.now();
         const fileName = file.name || `${docType}-${timestamp}`;
         const filePath = `applications/${applicationId}/${docType}-${timestamp}-${fileName}`;
-
         const arrayBuffer = await file.arrayBuffer();
-        const { error: uploadError } = await serverClient.storage
+
+        const { error: uploadError } = await supabaseAdmin.storage
           .from(uploadBucket)
           .upload(filePath, new Uint8Array(arrayBuffer), {
             cacheControl: '3600',
@@ -68,11 +104,11 @@ export async function POST(request) {
           return NextResponse.json({ error: `Upload failed for ${docType}: ${uploadError.message}` }, { status: 500 });
         }
 
-        const { data: publicUrlData } = serverClient.storage
+        const { data: publicUrlData, error: urlError } = await supabaseAdmin.storage
           .from(uploadBucket)
           .getPublicUrl(filePath);
 
-        if (!publicUrlData?.publicUrl) {
+        if (urlError || !publicUrlData?.publicUrl) {
           return NextResponse.json({ error: `Failed to generate public URL for ${docType}` }, { status: 500 });
         }
 
@@ -83,10 +119,9 @@ export async function POST(request) {
       }
     }
 
-    // Step 3: Save document URLs if files were uploaded
     if (Object.keys(documents).length > 0) {
       const docRecord = { application_id: applicationId, ...documents };
-      const { error: docError } = await serverClient.from('application_documents').insert([docRecord]);
+      const { error: docError } = await supabaseAdmin.from('application_documents').insert([docRecord]);
       if (docError) {
         console.error('Document insert error:', docError);
         return NextResponse.json({ error: docError.message || 'Failed to save application documents' }, { status: 500 });

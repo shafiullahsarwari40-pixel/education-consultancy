@@ -72,6 +72,7 @@ export default function ApplicationForm() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const [recaptchaVerified, setRecaptchaVerified] = useState(false);
+  const [fileSizeError, setFileSizeError] = useState('');
   const [formState, setFormState] = useState({
     full_name: '',
     email: '',
@@ -91,7 +92,61 @@ export default function ApplicationForm() {
     id_card: null,
     photo: null,
   });
-  const RECAPTCHA_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
+  const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ''; // set in .env.local and Vercel
+  const recaptchaEnabled = Boolean(RECAPTCHA_SITE_KEY);
+  const MAX_FILE_SIZE_BYTES = 12 * 1024 * 1024;
+  const MAX_TOTAL_UPLOAD_BYTES = 30 * 1024 * 1024;
+
+  const formatBytes = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`;
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    return `${(kb / 1024).toFixed(1)} MB`;
+  };
+
+  const getTotalFileSize = (files) =>
+    Object.values(files).reduce((total, file) => total + (file?.size || 0), 0);
+
+  const getDocumentFiles = () => ({
+    passport: formState.passport,
+    transcript: formState.transcript,
+    diploma: formState.diploma,
+    exam_sheet: formState.exam_sheet,
+    id_card: formState.id_card,
+    photo: formState.photo,
+  });
+
+  const uploadDocumentFile = async (applicationId, docType, file) => {
+    if (!file) return null;
+    if (!supabase) {
+      throw new Error('Upload client is not configured.');
+    }
+
+    const timestamp = Date.now();
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const filePath = `applications/${applicationId}/${docType}-${timestamp}-${safeName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('application-uploads')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw new Error(`Upload failed for ${docType}: ${uploadError.message}`);
+    }
+
+    const { data: publicUrlData, error: urlError } = await supabase.storage
+      .from('application-uploads')
+      .getPublicUrl(filePath);
+
+    if (urlError || !publicUrlData?.publicUrl) {
+      throw new Error(`Failed to generate public URL for ${docType}`);
+    }
+
+    return publicUrlData.publicUrl;
+  };
 
   const filteredCountries = COUNTRIES.filter(c => 
     c.toLowerCase().includes(countrySearch.toLowerCase())
@@ -129,6 +184,11 @@ export default function ApplicationForm() {
       const el = document.getElementById('recaptcha-widget');
       if (!el) return;
 
+      if (!recaptchaEnabled) {
+        setRecaptchaVerified(true);
+        return;
+      }
+
       if (window.grecaptcha && window.grecaptcha.render && !el.dataset.rendered) {
         window.grecaptcha.render(el, {
           sitekey: RECAPTCHA_SITE_KEY,
@@ -141,7 +201,7 @@ export default function ApplicationForm() {
     };
 
     renderRecaptcha();
-  }, []);
+  }, [recaptchaEnabled]);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -218,6 +278,27 @@ export default function ApplicationForm() {
 
   function handleFileChange(event, documentType) {
     const file = event.target.files[0] || null;
+    const existingFiles = { ...formState, [documentType]: file };
+    const totalSize = getTotalFileSize({
+      passport: existingFiles.passport,
+      transcript: existingFiles.transcript,
+      diploma: existingFiles.diploma,
+      exam_sheet: existingFiles.exam_sheet,
+      id_card: existingFiles.id_card,
+      photo: existingFiles.photo,
+    });
+
+    if (file && file.size > MAX_UPLOAD_SIZE_BYTES) {
+      setFileSizeError(`File ${file.name} is too large (${formatBytes(file.size)}). Maximum file size is ${formatBytes(MAX_UPLOAD_SIZE_BYTES)}.`);
+      return;
+    }
+
+    if (totalSize > MAX_UPLOAD_SIZE_BYTES) {
+      setFileSizeError(`Total uploaded documents exceed ${formatBytes(MAX_UPLOAD_SIZE_BYTES)}. Remove some files or upload smaller scans.`);
+      return;
+    }
+
+    setFileSizeError('');
     setFormState((prev) => ({ ...prev, [documentType]: file }));
   }
 
@@ -235,7 +316,7 @@ export default function ApplicationForm() {
       return String(error);
     };
 
-    if (!recaptchaVerified) {
+    if (recaptchaEnabled && !recaptchaVerified) {
       setErrorMessage('Please verify that you are not a robot.');
       return;
     }
@@ -243,6 +324,17 @@ export default function ApplicationForm() {
     const { full_name, email, phone, mother_name, father_name, address, country, program, university, message, passport, transcript, diploma, exam_sheet, id_card, photo } = formState;
     if (!full_name || !email || !phone) {
       setErrorMessage('Please complete full name, email, and phone.');
+      return;
+    }
+
+    if (fileSizeError) {
+      setErrorMessage(fileSizeError);
+      return;
+    }
+
+    const totalSize = getTotalFileSize({ passport, transcript, diploma, exam_sheet, id_card, photo });
+    if (totalSize > MAX_UPLOAD_SIZE_BYTES) {
+      setErrorMessage(`Attachments are too large. Maximum total upload size is ${formatBytes(MAX_UPLOAD_SIZE_BYTES)}.`);
       return;
     }
 
@@ -271,12 +363,27 @@ export default function ApplicationForm() {
         }
       }
 
+      if (recaptchaEnabled && recaptchaToken) {
+        formData.append('recaptchaToken', recaptchaToken);
+      }
+
       const res = await fetch('/api/submit', {
         method: 'POST',
         body: formData,
       });
 
-      const result = await res.json();
+      let result;
+      try {
+        result = await res.json();
+      } catch (jsonError) {
+        const text = await res.text();
+            const normalized = text.replace(/\s+/g, ' ').trim();
+            if (/request entity too large|413/i.test(normalized)) {
+              throw new Error('Upload is too large. Please reduce attachment sizes and try again.');
+            }
+        throw new Error(text || 'Unexpected server response');
+      }
+
       if (!res.ok) {
         throw new Error(result?.error || 'Server error saving application');
       }
@@ -326,6 +433,12 @@ export default function ApplicationForm() {
     <>
       <form className="form-grid application-form" onSubmit={handleSubmit}>
         <input type="hidden" name="university" value={formState.university} />
+        {recaptchaEnabled ? null : (
+          <div style={{ marginBottom: '1rem', color: '#b35' }}>
+            reCAPTCHA is disabled because NEXT_PUBLIC_RECAPTCHA_SITE_KEY is not configured.
+            You can still submit for testing, but enable recaptcha for production.
+          </div>
+        )}
 
         <div>
           <label className="form-label">
@@ -595,12 +708,24 @@ export default function ApplicationForm() {
             {errorMessage}
           </div>
         )}
+        {fileSizeError && !errorMessage && (
+          <div style={{
+            gridColumn: '1 / -1',
+            padding: '1rem',
+            background: '#fff4e5',
+            color: '#8a4f00',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: '1rem'
+          }}>
+            {fileSizeError}
+          </div>
+        )}
 
         <div className="full-row form-submit-row">
           <button
             type="submit"
             className="button button-primary button-large button-full-width"
-            disabled={loading || !recaptchaVerified}
+            disabled={loading || !recaptchaVerified || Boolean(fileSizeError)}
           >
             {loading ? t('form.submitting') : t('form.submit')}
           </button>
