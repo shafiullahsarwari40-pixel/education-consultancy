@@ -178,6 +178,26 @@ p {
   text-align: left;
 }
 
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: var(--spacing-3xl);
+}
+
+.section-image {
+  position: relative;
+  min-height: 420px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.section-image img,
+.section-image .rounded-image {
+  object-fit: cover;
+}
+
 .section-header h2 {
   color: var(--primary);
 }
@@ -1648,7 +1668,11 @@ footer a:hover {
 
   .hero-stats {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+  }
+
+  .about-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xl);
   }
 
   .application-form {
