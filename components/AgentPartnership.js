@@ -1,6 +1,9 @@
 'use client';
 
+import { useLanguage } from '../lib/LanguageContext';
+
 export default function AgentPartnership() {
+  const { t } = useLanguage();
   const benefits = [
     { title: 'Student Support', description: 'Help students apply to Turkish universities' },
     { title: 'Clear Communication', description: 'Direct access to Horizon team for inquiries' },
@@ -14,10 +17,10 @@ export default function AgentPartnership() {
     <section className="section" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)', color: 'white' }}>
       <div className="container">
         <div className="section-header" style={{ textAlign: 'center' }}>
-          <span className="section-label" style={{ color: 'var(--secondary-light)' }}>Partner Program</span>
-          <h2 style={{ color: 'white' }}>Become a Horizon Partner Agent</h2>
+          <span className="section-label" style={{ color: 'var(--secondary-light)' }}>{t('agent.program')}</span>
+          <h2 style={{ color: 'white' }}>{t('agent.becomeAgent')}</h2>
           <p style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-            Work with Horizon to help students apply to universities in Turkey and grow your business.
+            {t('agent.contactCTA')}
           </p>
         </div>
 

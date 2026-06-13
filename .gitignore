@@ -26,3 +26,5 @@ pnpm-debug.log*
 # Optional
 coverage/
 build/
+.vercel
+.env*

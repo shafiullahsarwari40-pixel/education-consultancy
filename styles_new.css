@@ -274,8 +274,8 @@ p {
 
 .navbar-logo .logo-image {
   position: relative;
-  width: 170px;
-  height: 48px;
+  width: 210px;
+  height: 64px;
 }
 
 .navbar-menu {
@@ -329,6 +329,51 @@ p {
   background: none;
   border: none;
   padding: 0;
+}
+
+/* Menu toggle used in Navbar component */
+.menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  font-size: 1.35rem;
+  cursor: pointer;
+}
+
+/* Desktop specific adjustments */
+.navbar-menu.desktop {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.navbar-menu.desktop a {
+  font-size: 0.95rem;
+}
+
+/* Hide mobile-only controls on larger screens */
+@media (min-width: 992px) {
+  .menu-toggle { display: none; }
+  .menu-close { display: none; }
+  .mobile-menu-backdrop { display: none; }
+  .navbar-menu.desktop { display: flex; }
+}
+
+/* Mobile sizing for logo */
+@media (max-width: 767px) {
+  .navbar-logo .logo-image { width: 150px; height: 56px; }
+  .footer-logo { width: 160px; height: 48px; }
+  .navbar-menu.desktop { display: none; }
+}
+
+/* Footer logo sizing */
+.footer-logo {
+  position: relative;
+  width: 200px;
+  height: 64px;
 }
 
 .hamburger span {

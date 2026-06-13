@@ -46,8 +46,10 @@ export default function Navbar() {
 
   const langNames = { en: 'English', tr: 'Türkçe', da: 'دری', ps: 'پښتو' };
 
+  const isRTL = language === 'da' || language === 'ps';
+
   return (
-    <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
+    <nav dir={isRTL ? 'rtl' : 'ltr'} className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container">
         <div className="navbar-inner">
           <Link href="/" className="navbar-logo">
@@ -61,6 +63,17 @@ export default function Navbar() {
               />
             </div>
           </Link>
+
+          <div className="desktop-nav">
+            <nav className="navbar-menu desktop">
+              <a href="#about">{t('nav.about')}</a>
+              <a href="#why-turkey">{t('nav.whyTurkey')}</a>
+              <a href="#services">{t('nav.services')}</a>
+              <a href="#universities">{t('nav.universities')}</a>
+              <a href="#programs">{t('nav.programs')}</a>
+              <a href="#contact">{t('nav.contact')}</a>
+            </nav>
+          </div>
 
           {mobileMenuOpen && <div className="mobile-menu-backdrop" onClick={handleNavClick} />}
           <div className={`navbar-menu ${mobileMenuOpen ? 'active' : ''}`} role="dialog" aria-modal={mobileMenuOpen}>
