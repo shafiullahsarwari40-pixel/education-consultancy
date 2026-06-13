@@ -433,12 +433,6 @@ export default function ApplicationForm() {
     <>
       <form className="form-grid application-form" onSubmit={handleSubmit}>
         <input type="hidden" name="university" value={formState.university} />
-        {recaptchaEnabled ? null : (
-          <div style={{ marginBottom: '1rem', color: '#b35' }}>
-            reCAPTCHA is disabled because NEXT_PUBLIC_RECAPTCHA_SITE_KEY is not configured.
-            You can still submit for testing, but enable recaptcha for production.
-          </div>
-        )}
 
         <div>
           <label className="form-label">
