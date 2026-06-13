@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '../lib/LanguageContext';
@@ -20,6 +21,7 @@ export default function Navbar() {
   }, []);
 
   const handleNavClick = () => {
+    setLangMenuOpen(false);
     setMobileMenuOpen(false);
   };
 
@@ -29,6 +31,19 @@ export default function Navbar() {
     setMobileMenuOpen(false);
   };
 
+  const toggleMenu = () => {
+    setLangMenuOpen(false);
+    setMobileMenuOpen((prev) => !prev);
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
+
   const langNames = { en: 'English', tr: 'Türkçe', da: 'دری', ps: 'پښتو' };
 
   return (
@@ -36,79 +51,100 @@ export default function Navbar() {
       <div className="container">
         <div className="navbar-inner">
           <Link href="/" className="navbar-logo">
-            Horizon
+            <div className="logo-image">
+              <Image
+                src="/images/logo.png"
+                alt="Horizon Educational Consultancy logo"
+                fill
+                sizes="(max-width: 768px) 130px, 170px"
+                style={{ objectFit: 'contain' }}
+              />
+            </div>
           </Link>
 
-          <div className={`navbar-menu ${mobileMenuOpen ? 'active' : ''}`}>
-            <a href="#about" onClick={handleNavClick}>{t('nav.about')}</a>
-            <a href="#why-turkey" onClick={handleNavClick}>{t('nav.whyTurkey')}</a>
-            <a href="#services" onClick={handleNavClick}>{t('nav.services')}</a>
-            <a href="#universities" onClick={handleNavClick}>{t('nav.universities')}</a>
-            <a href="#programs" onClick={handleNavClick}>{t('nav.programs')}</a>
-            <a href="#contact" onClick={handleNavClick}>{t('nav.contact')}</a>
-            <a href="/admin/login" onClick={handleNavClick}>Admin</a>
-            <a href="#application" className="button button-primary button-small mobile-menu-apply" onClick={handleNavClick}>
-              {t('nav.apply')}
-            </a>
-            <div className="language-switcher mobile-language-switcher">
-              <button 
-                className="lang-toggle"
-                onClick={() => setLangMenuOpen(!langMenuOpen)}
-                aria-label="Change language"
+          {mobileMenuOpen && <div className="mobile-menu-backdrop" onClick={handleNavClick} />}
+          <div className={`navbar-menu ${mobileMenuOpen ? 'active' : ''}`} role="dialog" aria-modal={mobileMenuOpen}>
+            <div className="navbar-menu-panel">
+              <button
+                type="button"
+                className="menu-close"
+                onClick={handleNavClick}
+                aria-label="Close menu"
               >
-                {langNames[language]}
+                ×
               </button>
-              {langMenuOpen && (
-                <div className="lang-dropdown">
-                  <button 
-                    onClick={() => handleLanguageChange('en')}
-                    className={language === 'en' ? 'active' : ''}
-                  >
-                    English
-                  </button>
-                  <button 
-                    onClick={() => handleLanguageChange('tr')}
-                    className={language === 'tr' ? 'active' : ''}
-                  >
-                    Türkçe
-                  </button>
-                  <button 
-                    onClick={() => handleLanguageChange('da')}
-                    className={language === 'da' ? 'active' : ''}
-                  >
-                    دری
-                  </button>
-                  <button 
-                    onClick={() => handleLanguageChange('ps')}
-                    className={language === 'ps' ? 'active' : ''}
-                  >
-                    پښتو
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="navbar-mobile-social">
-              <a
-                href="https://www.instagram.com/heceducons"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                onClick={handleNavClick}
-              >Instagram</a>
-              <a
-                href="https://www.facebook.com/profile.php?id=61590645456268"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook"
-                onClick={handleNavClick}
-              >Facebook</a>
-              <a
-                href="https://whatsapp.com/channel/0029VbClkJs5q08dSxjVU32R"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="WhatsApp Channel"
-                onClick={handleNavClick}
-              >WhatsApp</a>
+              <nav className="mobile-nav-links">
+                <a href="#about" onClick={handleNavClick}>{t('nav.about')}</a>
+                <a href="#why-turkey" onClick={handleNavClick}>{t('nav.whyTurkey')}</a>
+                <a href="#services" onClick={handleNavClick}>{t('nav.services')}</a>
+                <a href="#universities" onClick={handleNavClick}>{t('nav.universities')}</a>
+                <a href="#programs" onClick={handleNavClick}>{t('nav.programs')}</a>
+                <a href="#contact" onClick={handleNavClick}>{t('nav.contact')}</a>
+                <a href="/admin/login" onClick={handleNavClick}>Admin</a>
+                <a href="#application" className="button button-primary button-small mobile-menu-apply" onClick={handleNavClick}>
+                  {t('nav.apply')}
+                </a>
+              </nav>
+              <div className="language-switcher mobile-language-switcher">
+                <button
+                  className="lang-toggle"
+                  onClick={() => setLangMenuOpen(!langMenuOpen)}
+                  aria-label="Change language"
+                >
+                  {langNames[language]}
+                </button>
+                {langMenuOpen && (
+                  <div className="lang-dropdown">
+                    <button
+                      onClick={() => handleLanguageChange('en')}
+                      className={language === 'en' ? 'active' : ''}
+                    >
+                      English
+                    </button>
+                    <button
+                      onClick={() => handleLanguageChange('tr')}
+                      className={language === 'tr' ? 'active' : ''}
+                    >
+                      Türkçe
+                    </button>
+                    <button
+                      onClick={() => handleLanguageChange('da')}
+                      className={language === 'da' ? 'active' : ''}
+                    >
+                      دری
+                    </button>
+                    <button
+                      onClick={() => handleLanguageChange('ps')}
+                      className={language === 'ps' ? 'active' : ''}
+                    >
+                      پښتو
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="navbar-mobile-social">
+                <a
+                  href="https://www.instagram.com/heceducons"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  onClick={handleNavClick}
+                >Instagram</a>
+                <a
+                  href="https://www.facebook.com/profile.php?id=61590645456268"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  onClick={handleNavClick}
+                >Facebook</a>
+                <a
+                  href="https://whatsapp.com/channel/0029VbClkJs5q08dSxjVU32R"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="WhatsApp Channel"
+                  onClick={handleNavClick}
+                >WhatsApp</a>
+              </div>
             </div>
           </div>
 
@@ -197,13 +233,11 @@ export default function Navbar() {
               {t('nav.apply')}
             </Link>
             <button
-              className={`hamburger ${mobileMenuOpen ? 'active' : ''}`}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Toggle menu"
+              className={`menu-toggle ${mobileMenuOpen ? 'open' : ''}`}
+              onClick={toggleMenu}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             >
-              <span></span>
-              <span></span>
-              <span></span>
+              {mobileMenuOpen ? '×' : '☰'}
             </button>
           </div>
         </div>

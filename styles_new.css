@@ -266,10 +266,16 @@ p {
 }
 
 .navbar-logo {
-  font-size: 1.75rem;
-  font-weight: var(--font-weight-bold);
-  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
+  color: var(--primary);
+}
+
+.navbar-logo .logo-image {
+  position: relative;
+  width: 170px;
+  height: 48px;
 }
 
 .navbar-menu {
@@ -1242,6 +1248,13 @@ footer a:hover {
   color: white;
 }
 
+.footer-logo {
+  position: relative;
+  width: 180px;
+  height: 48px;
+  margin-bottom: 1rem;
+}
+
 .footer-section ul {
   list-style: none;
 }
@@ -1575,24 +1588,54 @@ footer a:hover {
     display: none;
     position: fixed;
     top: 0;
-    left: 0;
     right: 0;
     bottom: 0;
+    width: min(92vw, 340px);
     flex-direction: column;
     justify-content: flex-start;
     background-color: #ffffff;
-    padding: 1rem 1.25rem 1.5rem;
+    padding: 1.5rem 1.25rem 1.5rem;
     gap: 1rem;
-    z-index: 999;
+    z-index: 1001;
     overflow-y: auto;
-    transform: translateY(-110%);
+    transform: translateX(100%);
     transition: transform 0.35s ease;
-    box-shadow: 0 24px 50px rgba(15, 23, 42, 0.12);
+    box-shadow: -16px 0 40px rgba(15, 23, 42, 0.12);
   }
 
   .navbar-menu.active {
     display: flex;
-    transform: translateY(0);
+    transform: translateX(0);
+  }
+
+  .navbar-menu-panel {
+    position: relative;
+    width: 100%;
+  }
+
+  .menu-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.5rem;
+    width: 42px;
+    height: 42px;
+    border: none;
+    background: rgba(15, 23, 42, 0.08);
+    color: var(--text);
+    font-size: 1.75rem;
+    line-height: 1;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.28);
   }
 
   .navbar-menu .language-switcher {
@@ -1662,8 +1705,27 @@ footer a:hover {
     display: none;
   }
 
-  .hamburger {
+  .menu-toggle {
     display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 50%;
+    background: white;
+    color: var(--text);
+    font-size: 1.35rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+  }
+
+  .menu-toggle:hover {
+    background: var(--bg-light);
+  }
+
+  .hamburger {
+    display: none;
   }
 
   .navbar {
@@ -1943,6 +2005,13 @@ footer a:hover {
 
   .footer-content {
     gap: 1rem;
+  }
+
+  .footer-logo {
+    position: relative;
+    width: 180px;
+    height: 48px;
+    margin-bottom: 1rem;
   }
 
   .footer-bottom {

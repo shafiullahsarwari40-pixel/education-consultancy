@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useLanguage } from '../lib/LanguageContext';
 
 export default function Footer() {
@@ -12,6 +13,15 @@ export default function Footer() {
         <div className="footer-content">
           {/* Company Info */}
           <div className="footer-section">
+            <div className="footer-logo">
+              <Image
+                src="/images/logo.png"
+                alt="Horizon Educational Consultancy logo"
+                fill
+                sizes="(max-width: 768px) 130px, 180px"
+                style={{ objectFit: 'contain' }}
+              />
+            </div>
             <h4>{t('footer.companyName')}</h4>
             <p>{t('footer.companyDesc')}</p>
           </div>
