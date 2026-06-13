@@ -5,7 +5,12 @@ import ApplicationDetailClient from '../../../../components/ApplicationDetailCli
 
 export default function ApplicationDetailPage() {
   const params = useParams();
-  const id = params?.id;
+  let id = params?.id;
+
+  if (!id && typeof window !== 'undefined') {
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    id = parts[parts.length - 1];
+  }
 
   if (!id) {
     return (
