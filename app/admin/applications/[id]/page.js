@@ -1,7 +1,11 @@
+'use client';
+
+import { useParams } from 'next/navigation';
 import ApplicationDetailClient from '../../../../components/ApplicationDetailClient';
 
-export default async function ApplicationDetail({ params }) {
-  const { id } = await params;
+export default function ApplicationDetailPage() {
+  const params = useParams();
+  const id = params?.id;
 
   if (!id) {
     return (
