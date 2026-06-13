@@ -17,9 +17,9 @@ export default function Footer() {
               <Image
                 src="/images/logo.png"
                 alt="Horizon Educational Consultancy logo"
-                width={200}
-                height={60}
-                sizes="(max-width: 768px) 140px, 200px"
+                width={130}
+                height={39}
+                sizes="(max-width: 768px) 120px, 130px"
                 style={{ objectFit: 'contain' }}
               />
             </div>

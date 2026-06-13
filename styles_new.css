@@ -63,6 +63,20 @@ body {
   overflow-x: hidden;
 }
 
+/* RTL Support */
+html[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+html[dir="rtl"] body {
+  text-align: right;
+}
+
+html[dir="rtl"] .container {
+  text-align: right;
+}
+
 img {
   max-width: 100%;
   height: auto;
@@ -262,9 +276,9 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 0;
+  padding: 0.75rem 0;
   gap: 2rem;
-  height: 85px;
+  height: 80px;
   max-width: 1200px;
   margin: 0 auto;
   padding-left: 1rem;
@@ -280,9 +294,9 @@ p {
 }
 
 .navbar-logo img {
-  width: 180px;
+  width: 175px;
   height: auto;
-  min-width: 180px;
+  min-width: 175px;
   object-fit: contain;
 }
 
