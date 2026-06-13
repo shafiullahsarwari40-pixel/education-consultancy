@@ -14,7 +14,12 @@ export default function ApplicationDetailClient({ id }) {
   const [statusUpdating, setStatusUpdating] = useState(false);
 
   useEffect(() => {
-    console.log('ApplicationDetailClient - received id prop:', id);
+    if (!supabase) {
+      setErrorMsg('Supabase client is not configured. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.');
+      setLoading(false);
+      return;
+    }
+
     if (!id) {
       setErrorMsg('No ID provided to component');
       setLoading(false);
@@ -24,7 +29,10 @@ export default function ApplicationDetailClient({ id }) {
     (async () => {
       const { data } = await supabase.auth.getSession();
       const s = data?.session ?? null;
-      if (!s) return router.push('/admin/login');
+      if (!s) {
+        router.push('/admin/login');
+        return;
+      }
       setSession(s);
       setErrorMsg(null);
       await fetchDetail(s.access_token);
