@@ -288,13 +288,13 @@ export default function ApplicationForm() {
       photo: existingFiles.photo,
     });
 
-    if (file && file.size > MAX_UPLOAD_SIZE_BYTES) {
-      setFileSizeError(`File ${file.name} is too large (${formatBytes(file.size)}). Maximum file size is ${formatBytes(MAX_UPLOAD_SIZE_BYTES)}.`);
+    if (file && file.size > MAX_FILE_SIZE_BYTES) {
+      setFileSizeError(`File ${file.name} is too large (${formatBytes(file.size)}). Maximum file size is ${formatBytes(MAX_FILE_SIZE_BYTES)}.`);
       return;
     }
 
-    if (totalSize > MAX_UPLOAD_SIZE_BYTES) {
-      setFileSizeError(`Total uploaded documents exceed ${formatBytes(MAX_UPLOAD_SIZE_BYTES)}. Remove some files or upload smaller scans.`);
+    if (totalSize > MAX_TOTAL_UPLOAD_BYTES) {
+      setFileSizeError(`Total uploaded documents exceed ${formatBytes(MAX_TOTAL_UPLOAD_BYTES)}. Remove some files or upload smaller scans.`);
       return;
     }
 
@@ -333,8 +333,8 @@ export default function ApplicationForm() {
     }
 
     const totalSize = getTotalFileSize({ passport, transcript, diploma, exam_sheet, id_card, photo });
-    if (totalSize > MAX_UPLOAD_SIZE_BYTES) {
-      setErrorMessage(`Attachments are too large. Maximum total upload size is ${formatBytes(MAX_UPLOAD_SIZE_BYTES)}.`);
+    if (totalSize > MAX_TOTAL_UPLOAD_BYTES) {
+      setErrorMessage(`Attachments are too large. Maximum total upload size is ${formatBytes(MAX_TOTAL_UPLOAD_BYTES)}.`);
       return;
     }
 
