@@ -60,6 +60,7 @@ export default function AdminDashboard() {
     const body = await res.json();
     setApps(body.applications || []);
     setStats(body.stats || null);
+    console.log('admin apps fetched', body.applications);
     setLoading(false);
   }
 
@@ -136,7 +137,14 @@ export default function AdminDashboard() {
               {apps.map((a) => (
                 <tr key={a.id} style={{ borderTop: '1px solid #eee' }}>
                   <td style={{ padding: 8 }}>
-                    <Link href={`/admin/applications/${a.id}`}>{a.full_name}</Link>
+                    <div>
+                      {a.id ? (
+                        <Link href={`/admin/applications/${a.id}`}>{a.full_name}</Link>
+                      ) : (
+                        <span style={{ color: '#999' }}>{a.full_name}</span>
+                      )}
+                      <div style={{ fontSize: 12, color: '#666' }}>id: {a.id || '—'}</div>
+                    </div>
                   </td>
                   <td style={{ padding: 8 }}>{a.email}</td>
                   <td style={{ padding: 8 }}>{a.program}</td>

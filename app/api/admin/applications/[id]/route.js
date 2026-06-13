@@ -47,6 +47,12 @@ export async function GET(request, { params }) {
   if (!authCheck.ok) return NextResponse.json(authCheck.body, { status: authCheck.status });
 
   const id = params.id;
+  // validate id looks like a UUID to avoid passing 'undefined' or bad input to the DB
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!id || !uuidRegex.test(id)) {
+    console.error('Invalid application id received:', id, 'from', request.url);
+    return NextResponse.json({ error: `Invalid application id: ${String(id)}`, received: request.url }, { status: 400 });
+  }
   const { data: appData, error } = await supabaseAdmin.from('applications').select('*').eq('id', id).limit(1).single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -67,6 +73,11 @@ export async function PATCH(request, { params }) {
   if (!authCheck.ok) return NextResponse.json(authCheck.body, { status: authCheck.status });
 
   const id = params.id;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!id || !uuidRegex.test(id)) {
+    console.error('Invalid application id received for PATCH:', id, 'from', request.url);
+    return NextResponse.json({ error: `Invalid application id: ${String(id)}`, received: request.url }, { status: 400 });
+  }
   const body = await request.json();
   const { status } = body;
   if (!status) return NextResponse.json({ error: 'Missing status' }, { status: 400 });

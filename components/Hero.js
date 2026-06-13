@@ -10,7 +10,7 @@ const heroSlides = [
     alt: 'Students on a Turkish university campus at sunset',
   },
   {
-    src: '/images/student-life.webp',
+    src: '/images/university-campus-2.webp',
     alt: 'International students enjoying campus life in Turkey',
   },
   {

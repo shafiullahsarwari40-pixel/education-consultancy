@@ -83,10 +83,10 @@ export default function Navbar() {
           <Image
             src="/images/logo.png"
             alt="Horizon logo"
-            width={175}
-            height={42}
-            style={{ objectFit: 'contain' }}
-            sizes="(max-width: 767px) 140px, 175px"
+            width={150}
+            height={36}
+            style={{ objectFit: 'contain', background: 'transparent' }}
+            sizes="(max-width: 767px) 120px, 150px"
             priority
           />
         </Link>

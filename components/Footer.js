@@ -16,15 +16,15 @@ export default function Footer() {
             <div className="footer-logo">
               <Image
                 src="/images/logo.png"
-                alt="Horizon Educational Consultancy logo"
-                width={130}
-                height={39}
-                sizes="(max-width: 768px) 120px, 130px"
-                style={{ objectFit: 'contain' }}
+                alt={t('footer.companyName')}
+                width={110}
+                height={33}
+                sizes="(max-width: 768px) 100px, 110px"
+                style={{ objectFit: 'contain', background: 'transparent' }}
               />
             </div>
             <h4>{t('footer.companyName')}</h4>
-            <p>{t('footer.companyDesc')}</p>
+            <p className="footer-desc">{t('footer.companyDesc')}</p>
           </div>
 
           {/* Quick Links */}
@@ -112,10 +112,14 @@ export default function Footer() {
         </div>
 
         <div className="footer-bottom">
-          <p>&copy; {currentYear} Horizon Educational Consultancy. {t('footer.copyright')}</p>
+          <p>
+            {t('footer.copyrightFull')
+              ? t('footer.copyrightFull').replace('{year}', currentYear)
+              : `© ${currentYear} Horizon Educational Consultancy. ${t('footer.copyright')}`}
+          </p>
           <div className="footer-links">
-            <a href="/privacy">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
+            <a href="/privacy">{t('footer.privacy')}</a>
+            <a href="/terms">{t('footer.terms')}</a>
           </div>
         </div>
       </div>
