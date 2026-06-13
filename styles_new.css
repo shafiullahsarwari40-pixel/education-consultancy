@@ -262,31 +262,39 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 0;
-  height: 85px; /* target navbar height on desktop */
+  padding: 0.5rem 0;
+  gap: 2rem;
+  height: 85px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
 .navbar-logo {
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
+  text-decoration: none;
+  color: var(--primary);
 }
 
-.navbar-logo img,
-.navbar-logo picture,
-.navbar-logo .next-image {
-  width: 210px;
+.navbar-logo img {
+  width: 180px;
   height: auto;
   min-width: 180px;
   object-fit: contain;
 }
 
-.nav-center { flex: 1 1 auto; display: flex; justify-content: center; }
-
-.navbar-menu {
+/* CENTER: Navigation menu */
+.navbar-menu.desktop {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1.5rem;
   list-style: none;
+  flex: 1 1 auto;
+  white-space: nowrap;
+  justify-content: center;
 }
 
 .navbar-menu a {
@@ -294,6 +302,7 @@ p {
   color: var(--text);
   position: relative;
   transition: color 0.3s ease;
+  font-size: 0.95rem;
 }
 
 .navbar-menu a::after {
@@ -319,69 +328,140 @@ p {
   width: 100%;
 }
 
-.nav-right { display: flex; gap: var(--spacing-md); align-items: center; }
-
-.navbar-social.desktop { display: flex; gap: 0.75rem; align-items: center; }
-.navbar-social.desktop .social-icon-link { font-size: 0.95rem; color: var(--text); }
-
-.hamburger {
-  display: none;
-  flex-direction: column;
-  gap: 5px;
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 0;
+/* RIGHT: Social icons, language, button */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
 }
 
-/* Menu toggle used in Navbar component */
+.navbar-social {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.social-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: rgba(0, 31, 92, 0.08);
+  color: var(--primary);
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.social-btn:hover {
+  background-color: var(--primary);
+  color: white;
+}
+
+.language-switcher {
+  position: relative;
+}
+
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  background-color: rgba(0, 31, 92, 0.05);
+  color: var(--primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.lang-toggle:hover {
+  background-color: rgba(0, 31, 92, 0.1);
+}
+
+.lang-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  z-index: 10;
+  min-width: 150px;
+}
+
+.lang-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.lang-dropdown button:hover {
+  background-color: var(--bg-light);
+}
+
+.lang-dropdown button.active {
+  color: var(--secondary);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Menu toggle for mobile */
 .menu-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: none;
   border: none;
-  font-size: 1.35rem;
+  font-size: 1.5rem;
   cursor: pointer;
+  padding: 0.5rem;
+  color: var(--primary);
 }
 
-/* Desktop specific adjustments */
-.navbar-menu.desktop {
-  display: flex;
-  gap: 1.5rem;
-  align-items: center;
-  white-space: nowrap;
-}
-
-.navbar-menu.desktop a {
-  font-size: 0.95rem;
-}
-
-/* Hide mobile-only controls on larger screens */
+/* Hide menu toggle on desktop */
 @media (min-width: 992px) {
   .menu-toggle.mobile { display: none; }
   .menu-close { display: none; }
   .mobile-menu { display: none; }
   .navbar-menu.desktop { display: flex; }
-  .navbar-inner { height: 85px; }
 }
 
-/* Mobile sizing for logo and mobile-only behavior */
-@media (max-width: 767px) {
-  .navbar-logo img, .navbar-logo .next-image { width: 150px; min-width: 140px; }
-  .footer-logo { width: 160px; height: 48px; }
+/* Mobile behavior */
+@media (max-width: 991px) {
+  .navbar-logo img {
+    width: 140px;
+    min-width: 140px;
+  }
+
   .navbar-menu.desktop { display: none; }
-  .nav-center { display: none; }
-  .navbar-social.desktop { display: none; }
+  .navbar-social { display: none; }
   .language-switcher.desktop { display: none; }
+  .button.desktop { display: none; }
   .menu-toggle.mobile { display: inline-flex; }
+
+  .navbar-inner {
+    gap: 1rem;
+    height: auto;
+    padding: 0.5rem 1rem;
+  }
 }
 
 /* Mobile menu panel */
 .mobile-menu {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0, 0, 0, 0.35);
   display: flex;
   justify-content: flex-end;
   z-index: 200;
@@ -392,22 +472,69 @@ p {
   background: var(--bg);
   padding: 1.25rem;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .mobile-panel .menu-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
   background: none;
   border: none;
   font-size: 1.5rem;
-  float: right;
+  cursor: pointer;
+  padding: 0;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
 }
 
-.mobile-nav-links { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
-.mobile-social, .mobile-language { margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
-.mobile-apply { margin-top: 1.25rem; width: 100%; display: inline-flex; justify-content: center; }
+.mobile-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 
-/* RTL helper for desktop nav */
-.navbar-menu.desktop.rtl { direction: rtl; }
-.navbar-menu.desktop.rtl a { text-align: right; }
+.mobile-nav-links a {
+  color: var(--text);
+  font-weight: var(--font-weight-medium);
+}
+
+.mobile-social {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.mobile-language {
+  display: flex;
+  gap: 0.75rem;
+  flex-direction: column;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.mobile-language button {
+  padding: 0.5rem 1rem;
+  text-align: left;
+  background-color: rgba(0, 31, 92, 0.05);
+  color: var(--primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.mobile-language button:hover {
+  background-color: rgba(0, 31, 92, 0.1);
+}
+
+.mobile-apply {
+  margin-top: 1rem;
+  width: 100%;
+}
 
 /* Footer logo sizing */
 .footer-logo {

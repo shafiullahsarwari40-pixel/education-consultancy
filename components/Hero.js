@@ -83,38 +83,38 @@ export default function Hero() {
 
           <div className="hero-stats">
             <div className="stat-item">
-              <span className="stat-number">70+</span>
-              <span className="stat-label">University Options</span>
+              <span className="stat-number">{t('hero.stat1')}</span>
+              <span className="stat-label">{t('hero.stat1Label')}</span>
             </div>
             <div className="stat-item">
-              <span className="stat-number">500+</span>
-              <span className="stat-label">Students Guided</span>
+              <span className="stat-number">{t('hero.stat2')}</span>
+              <span className="stat-label">{t('hero.stat2Label')}</span>
             </div>
             <div className="stat-item">
-              <span className="stat-number">48h</span>
-              <span className="stat-label">Fast Application Review</span>
+              <span className="stat-number">{t('hero.stat3')}</span>
+              <span className="stat-label">{t('hero.stat3Label')}</span>
             </div>
           </div>
         </div>
 
         <div className="hero-panel">
           <div className="hero-card">
-            <p style={{ fontSize: '0.875rem', color: 'var(--secondary)', marginBottom: '1rem' }}>TRUSTED PARTNER</p>
-            <h2>Your Path to Turkish Universities</h2>
-            <p>From selecting the right university to securing your acceptance and preparing for arrival, we guide you every step of the way.</p>
+            <p style={{ fontSize: '0.875rem', color: 'var(--secondary)', marginBottom: '1rem' }}>{t('hero.trusted')}</p>
+            <h2>{t('hero.path')}</h2>
+            <p>{t('hero.pathDesc')}</p>
             
             <div className="hero-card-items">
               <div className="hero-card-item">
-                <h3>Expert Guidance</h3>
-                <p>Personal support to help you choose the right program and university.</p>
+                <h3>{t('hero.guidance')}</h3>
+                <p>{t('hero.guidanceDesc')}</p>
               </div>
               <div className="hero-card-item">
-                <h3>Document Support</h3>
-                <p>We help prepare and organize all required application documents.</p>
+                <h3>{t('hero.documents')}</h3>
+                <p>{t('hero.documentsDesc')}</p>
               </div>
               <div className="hero-card-item">
-                <h3>Complete Assistance</h3>
-                <p>From application through visa and arrival, we&apos;re with you every step.</p>
+                <h3>{t('hero.assistance')}</h3>
+                <p>{t('hero.assistanceDesc')}</p>
               </div>
             </div>
           </div>
