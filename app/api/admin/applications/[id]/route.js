@@ -46,7 +46,7 @@ export async function GET(request, { params }) {
   const authCheck = await requireAdmin(request);
   if (!authCheck.ok) return NextResponse.json(authCheck.body, { status: authCheck.status });
 
-  const id = params.id;
+  const { id } = await params;
   // validate id looks like a UUID to avoid passing 'undefined' or bad input to the DB
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   if (!id || !uuidRegex.test(id)) {
@@ -72,7 +72,7 @@ export async function PATCH(request, { params }) {
   const authCheck = await requireAdmin(request);
   if (!authCheck.ok) return NextResponse.json(authCheck.body, { status: authCheck.status });
 
-  const id = params.id;
+  const { id } = await params;
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   if (!id || !uuidRegex.test(id)) {
     console.error('Invalid application id received for PATCH:', id, 'from', request.url);
