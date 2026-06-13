@@ -1,260 +1,137 @@
-'use client';
+"use client";
 
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { useLanguage } from '../lib/LanguageContext';
 
 export default function Navbar() {
   const { language, changeLanguage, t } = useLanguage();
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [langMenuOpen, setLangMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const handleNavClick = () => {
-    setLangMenuOpen(false);
-    setMobileMenuOpen(false);
-  };
-
-  const handleLanguageChange = (lang) => {
-    changeLanguage(lang);
-    setLangMenuOpen(false);
-    setMobileMenuOpen(false);
-  };
-
-  const toggleMenu = () => {
-    setLangMenuOpen(false);
-    setMobileMenuOpen((prev) => !prev);
-  };
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [mobileMenuOpen]);
-
-  const langNames = { en: 'English', tr: 'Türkçe', da: 'دری', ps: 'پښتو' };
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
 
   const isRTL = language === 'da' || language === 'ps';
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileOpen]);
+
+  const navItems = [
+    { href: '#about', label: t('nav.about') },
+    { href: '#why-turkey', label: t('nav.whyTurkey') },
+    { href: '#services', label: t('nav.services') },
+    { href: '#universities', label: t('nav.universities') },
+    { href: '#programs', label: t('nav.programs') },
+    { href: '#contact', label: t('nav.contact') },
+    { href: '/admin/login', label: 'Admin' },
+  ];
+
+  const langNames = { en: 'English', tr: 'Türkçe', da: 'دری', ps: 'پښتو' };
+
+  function closeAll() {
+    setMobileOpen(false);
+    setLangOpen(false);
+  }
+
+  function changeLang(l) {
+    changeLanguage(l);
+    setLangOpen(false);
+    setMobileOpen(false);
+  }
+
   return (
-    <nav dir={isRTL ? 'rtl' : 'ltr'} className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
+    <header dir={isRTL ? 'rtl' : 'ltr'} className="navbar">
       <div className="container">
-        <div className="navbar-inner">
-          <Link href="/" className="navbar-logo">
-            <div className="logo-image">
+        <div className="navbar-inner" style={{ alignItems: 'center' }}>
+          <div className="nav-left">
+            <Link href="/" className="navbar-logo" onClick={closeAll}>
               <Image
                 src="/images/logo.png"
-                alt="Horizon Educational Consultancy logo"
-                fill
-                sizes="(max-width: 768px) 130px, 170px"
+                alt="Horizon logo"
+                width={210}
+                height={64}
                 style={{ objectFit: 'contain' }}
+                sizes="(max-width: 767px) 150px, 210px"
+                priority
               />
-            </div>
-          </Link>
+            </Link>
+          </div>
 
-          <div className="desktop-nav">
-            <nav className="navbar-menu desktop">
-              <a href="#about">{t('nav.about')}</a>
-              <a href="#why-turkey">{t('nav.whyTurkey')}</a>
-              <a href="#services">{t('nav.services')}</a>
-              <a href="#universities">{t('nav.universities')}</a>
-              <a href="#programs">{t('nav.programs')}</a>
-              <a href="#contact">{t('nav.contact')}</a>
+          <div className="nav-center">
+            <nav className={`navbar-menu desktop ${isRTL ? 'rtl' : ''}`} aria-label="Primary navigation">
+              {navItems.map((item) => (
+                <a key={item.href} href={item.href} onClick={closeAll}>
+                  {item.label}
+                </a>
+              ))}
             </nav>
           </div>
 
-          {mobileMenuOpen && <div className="mobile-menu-backdrop" onClick={handleNavClick} />}
-          <div className={`navbar-menu ${mobileMenuOpen ? 'active' : ''}`} role="dialog" aria-modal={mobileMenuOpen}>
-            <div className="navbar-menu-panel">
-              <button
-                type="button"
-                className="menu-close"
-                onClick={handleNavClick}
-                aria-label="Close menu"
-              >
-                ×
-              </button>
-              <nav className="mobile-nav-links">
-                <a href="#about" onClick={handleNavClick}>{t('nav.about')}</a>
-                <a href="#why-turkey" onClick={handleNavClick}>{t('nav.whyTurkey')}</a>
-                <a href="#services" onClick={handleNavClick}>{t('nav.services')}</a>
-                <a href="#universities" onClick={handleNavClick}>{t('nav.universities')}</a>
-                <a href="#programs" onClick={handleNavClick}>{t('nav.programs')}</a>
-                <a href="#contact" onClick={handleNavClick}>{t('nav.contact')}</a>
-                <a href="/admin/login" onClick={handleNavClick}>Admin</a>
-                <a href="#application" className="button button-primary button-small mobile-menu-apply" onClick={handleNavClick}>
-                  {t('nav.apply')}
-                </a>
-              </nav>
-              <div className="language-switcher mobile-language-switcher">
-                <button
-                  className="lang-toggle"
-                  onClick={() => setLangMenuOpen(!langMenuOpen)}
-                  aria-label="Change language"
-                >
-                  {langNames[language]}
-                </button>
-                {langMenuOpen && (
-                  <div className="lang-dropdown">
-                    <button
-                      onClick={() => handleLanguageChange('en')}
-                      className={language === 'en' ? 'active' : ''}
-                    >
-                      English
-                    </button>
-                    <button
-                      onClick={() => handleLanguageChange('tr')}
-                      className={language === 'tr' ? 'active' : ''}
-                    >
-                      Türkçe
-                    </button>
-                    <button
-                      onClick={() => handleLanguageChange('da')}
-                      className={language === 'da' ? 'active' : ''}
-                    >
-                      دری
-                    </button>
-                    <button
-                      onClick={() => handleLanguageChange('ps')}
-                      className={language === 'ps' ? 'active' : ''}
-                    >
-                      پښتو
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className="navbar-mobile-social">
-                <a
-                  href="https://www.instagram.com/heceducons"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram"
-                  onClick={handleNavClick}
-                >Instagram</a>
-                <a
-                  href="https://www.facebook.com/profile.php?id=61590645456268"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook"
-                  onClick={handleNavClick}
-                >Facebook</a>
-                <a
-                  href="https://whatsapp.com/channel/0029VbClkJs5q08dSxjVU32R"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="WhatsApp Channel"
-                  onClick={handleNavClick}
-                >WhatsApp</a>
-              </div>
+          <div className="nav-right">
+            <div className="navbar-social desktop">
+              <a href="https://www.instagram.com/heceducons" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="social-icon-link">Instagram</a>
+              <a href="https://www.facebook.com/profile.php?id=61590645456268" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="social-icon-link">Facebook</a>
+              <a href="https://whatsapp.com/channel/0029VbClkJs5q08dSxjVU32R" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="social-icon-link">WhatsApp</a>
             </div>
-          </div>
 
-          <div className="navbar-cta">
-            <div className="navbar-social">
-              <a
-                href="https://www.instagram.com/heceducons"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                className="social-icon-link"
-              >
-                <span className="social-icon instagram">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" aria-hidden="true">
-                    <path d="M12 7.2a4.8 4.8 0 1 0 0 9.6 4.8 4.8 0 0 0 0-9.6Zm0 7.8a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" />
-                    <path d="M17.5 6.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
-                    <path d="M17 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm1 13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v10Z" />
-                  </svg>
-                </span>
-              </a>
-              <a
-                href="https://www.facebook.com/profile.php?id=61590645456268"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook"
-                className="social-icon-link"
-              >
-                <span className="social-icon facebook">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" aria-hidden="true">
-                    <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.99 3.66 9.12 8.44 9.88v-6.99h-2.54V12h2.54V9.79c0-2.51 1.49-3.89 3.77-3.89 1.09 0 2.23.2 2.23.2v2.45h-1.25c-1.23 0-1.61.76-1.61 1.54V12h2.74l-.44 2.89h-2.3v6.99C18.34 21.12 22 16.99 22 12Z" />
-                  </svg>
-                </span>
-              </a>
-              <a
-                href="https://whatsapp.com/channel/0029VbClkJs5q08dSxjVU32R"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="WhatsApp Channel"
-                className="social-icon-link"
-              >
-                <span className="social-icon whatsapp">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" aria-hidden="true">
-                    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm4.72 13.11c-.24.68-1.4 1.31-1.93 1.39-.51.08-1.14.12-2.78-.59-2.29-.99-3.78-3.19-3.9-3.34-.12-.15-1.01-1.19-1.01-2.26 0-1.07.59-1.6.8-1.82.21-.22.47-.27.63-.27.16 0 .33 0 .48 0 .16.01.37-.06.57.43.2.49.67 1.7.73 1.82.07.12.12.26.01.42-.1.16-.15.27-.29.42-.14.14-.29.31-.42.42-.14.14-.28.29-.12.56.16.27.7 1.14 1.5 1.84 1.04 0 1.8-.73 1.99-.95.19-.22.38-.18.65-.11.27.07 1.7.8 1.99.95.29.15.48.22.55.35.07.13.07.74-.17 1.42Z" />
-                  </svg>
-                </span>
-              </a>
-            </div>
-            <div className="language-switcher">
-              <button 
-                className="lang-toggle"
-                onClick={() => setLangMenuOpen(!langMenuOpen)}
-                aria-label="Change language"
-              >
+            <div className="language-switcher desktop">
+              <button className="lang-toggle" onClick={() => setLangOpen((s) => !s)} aria-expanded={langOpen} aria-label="Language">
                 {langNames[language]}
               </button>
-              {langMenuOpen && (
+              {langOpen && (
                 <div className="lang-dropdown">
-                  <button 
-                    onClick={() => handleLanguageChange('en')}
-                    className={language === 'en' ? 'active' : ''}
-                  >
-                    English
-                  </button>
-                  <button 
-                    onClick={() => handleLanguageChange('tr')}
-                    className={language === 'tr' ? 'active' : ''}
-                  >
-                    Türkçe
-                  </button>
-                  <button 
-                    onClick={() => handleLanguageChange('da')}
-                    className={language === 'da' ? 'active' : ''}
-                  >
-                    دری
-                  </button>
-                  <button 
-                    onClick={() => handleLanguageChange('ps')}
-                    className={language === 'ps' ? 'active' : ''}
-                  >
-                    پښتو
-                  </button>
+                  <button onClick={() => changeLang('en')}>English</button>
+                  <button onClick={() => changeLang('tr')}>Türkçe</button>
+                  <button onClick={() => changeLang('da')}>دری</button>
+                  <button onClick={() => changeLang('ps')}>پښتو</button>
                 </div>
               )}
             </div>
-            <Link href="#application" className="button button-primary button-small" onClick={handleNavClick}>
+
+            <a href="#application" className="button button-primary button-small desktop" onClick={closeAll}>
               {t('nav.apply')}
-            </Link>
+            </a>
+
             <button
-              className={`menu-toggle ${mobileMenuOpen ? 'open' : ''}`}
-              onClick={toggleMenu}
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              className={`menu-toggle mobile ${mobileOpen ? 'open' : ''}`}
+              onClick={() => setMobileOpen((s) => !s)}
+              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             >
-              {mobileMenuOpen ? '×' : '☰'}
+              <span className="hamburger-icon">{mobileOpen ? '×' : '☰'}</span>
             </button>
           </div>
         </div>
       </div>
-    </nav>
+
+      {/* Mobile panel */}
+      {mobileOpen && (
+        <div className="mobile-menu">
+          <div className="mobile-panel">
+            <button className="menu-close" onClick={closeAll} aria-label="Close menu">×</button>
+            <nav className="mobile-nav-links">
+              {navItems.map((item) => (
+                <a key={item.href} href={item.href} onClick={closeAll}>{item.label}</a>
+              ))}
+            </nav>
+            <div className="mobile-social">
+              <a href="https://www.instagram.com/heceducons" target="_blank" rel="noopener noreferrer">Instagram</a>
+              <a href="https://www.facebook.com/profile.php?id=61590645456268" target="_blank" rel="noopener noreferrer">Facebook</a>
+              <a href="https://whatsapp.com/channel/0029VbClkJs5q08dSxjVU32R" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+            </div>
+            <div className="mobile-language">
+              <button onClick={() => changeLang('en')}>English</button>
+              <button onClick={() => changeLang('tr')}>Türkçe</button>
+              <button onClick={() => changeLang('da')}>دری</button>
+              <button onClick={() => changeLang('ps')}>پښتو</button>
+            </div>
+            <a href="#application" className="button button-primary button-large mobile-apply" onClick={closeAll}>{t('nav.apply')}</a>
+          </div>
+        </div>
+      )}
+    </header>
   );
 }
