@@ -5,7 +5,6 @@ import WhyTurkey from '../components/WhyTurkey';
 import Services from '../components/Services';
 import Universities from '../components/Universities';
 import Programs from '../components/Programs';
-import ApplicationProcess from '../components/ApplicationProcess';
 import ApplicationForm from '../components/ApplicationForm';
 import AgentPartnership from '../components/AgentPartnership';
 import Testimonials from '../components/Testimonials';
@@ -16,6 +15,9 @@ import WhatsAppButton from '../components/WhatsAppButton';
 import WhyChooseHorizon from '../components/WhyChooseHorizon';
 import FAQSection from '../components/FAQSection';
 import SocialProof from '../components/SocialProof';
+import SuccessStories from '../components/SuccessStories';
+import StudentDashboard from '../components/StudentDashboard';
+import ApplicationProcessTimeline from '../components/ApplicationProcessTimeline';
 
 export default function Home() {
   return (
@@ -24,15 +26,18 @@ export default function Home() {
       <main>
         <Hero />
         <About />
+        <WhyChooseHorizon />
+        <SuccessStories />
+        <Testimonials />
         <WhyTurkey />
         <Services />
         <SocialProof />
-        <WhyChooseHorizon />
         <Universities />
         <Programs />
-        <ApplicationProcess />
+        <ApplicationProcessTimeline />
+        <StudentDashboard />
         <FAQSection />
-        
+
         <section className="section" id="application">
           <div className="container">
             <div className="section-header">
@@ -48,7 +53,6 @@ export default function Home() {
         </section>
 
         <AgentPartnership />
-        <Testimonials />
         <Contact />
         <FollowHorizon />
       </main>

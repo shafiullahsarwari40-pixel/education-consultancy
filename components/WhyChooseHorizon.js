@@ -1,22 +1,25 @@
 'use client';
 
+import { useLanguage } from '../lib/LanguageContext';
+
 export default function WhyChooseHorizon() {
+  const { t } = useLanguage();
   const cards = [
     {
-      title: 'Fast Communication',
-      description: 'Quick responses through WhatsApp and direct support for every application step.'
+      title: t('whyChooseHorizon.card1Title'),
+      description: t('whyChooseHorizon.card1Desc')
     },
     {
-      title: 'Student-Focused Support',
-      description: 'Personalized guidance that prioritizes your goals and academic profile.'
+      title: t('whyChooseHorizon.card2Title'),
+      description: t('whyChooseHorizon.card2Desc')
     },
     {
-      title: 'Turkish University Expertise',
-      description: 'Deep knowledge of Turkey’s admission process and university requirements.'
+      title: t('whyChooseHorizon.card3Title'),
+      description: t('whyChooseHorizon.card3Desc')
     },
     {
-      title: 'End-to-End Guidance',
-      description: 'From document preparation to arrival in Turkey, we support you completely.'
+      title: t('whyChooseHorizon.card4Title'),
+      description: t('whyChooseHorizon.card4Desc')
     }
   ];
 
@@ -24,9 +27,9 @@ export default function WhyChooseHorizon() {
     <section className="section why-choose" id="why-choose">
       <div className="container">
         <div className="section-header">
-          <span className="section-label">Why Choose Horizon?</span>
-          <h2>Study Abroad Support Designed for You</h2>
-          <p>We help students secure admission, manage documents, and move to Turkey with confidence.</p>
+          <span className="section-label">{t('whyChooseHorizon.label')}</span>
+          <h2>{t('whyChooseHorizon.title')}</h2>
+          <p>{t('whyChooseHorizon.description')}</p>
         </div>
 
         <div className="why-choose-grid">

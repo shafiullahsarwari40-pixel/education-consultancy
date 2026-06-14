@@ -1,23 +1,26 @@
 'use client';
 
+import { useLanguage } from '../lib/LanguageContext';
+
 export default function Testimonials() {
+  const { t } = useLanguage();
   const testimonials = [
     {
       name: 'Ahmad N.',
-      role: 'Engineering Student',
-      text: 'Horizon made my application process so smooth and easy. The team was always available to help me with documents and questions.',
+      role: t('testimonials.testimonial1Role'),
+      text: t('testimonials.testimonial1Text'),
       stars: 5
     },
     {
       name: 'Fatima A.',
-      role: 'Medicine Student',
-      text: 'I was worried about the visa process, but Horizon guided me step by step. Everything was clear and well organized.',
+      role: t('testimonials.testimonial2Role'),
+      text: t('testimonials.testimonial2Text'),
       stars: 5
     },
     {
       name: 'Mohammad R.',
-      role: 'Business Student',
-      text: 'Great support from start to finish. The scholarship guidance helped me get funding. Highly recommend Horizon!',
+      role: t('testimonials.testimonial3Role'),
+      text: t('testimonials.testimonial3Text'),
       stars: 5
     },
   ];
@@ -26,9 +29,9 @@ export default function Testimonials() {
     <section className="section">
       <div className="container">
         <div className="section-header">
-          <span className="section-label">Success Stories</span>
-          <h2>What Students Say</h2>
-          <p>Join hundreds of students who successfully started their education journey with Horizon.</p>
+          <span className="section-label">{t('testimonials.label')}</span>
+          <h2>{t('testimonials.title')}</h2>
+          <p>{t('testimonials.description')}</p>
         </div>
 
         <div className="testimonials-grid">

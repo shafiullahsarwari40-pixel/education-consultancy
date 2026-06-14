@@ -3,8 +3,20 @@ import '../styles_new.css';
 import { LanguageProvider } from '../lib/LanguageContext';
 
 export const metadata = {
-  title: 'Horizon Educational Consultancy - Study in Turkey',
-  description: 'Your gateway to studying in Turkey. Expert guidance, university admission support, visa assistance, and complete student services.',
+  title: 'Horizon Educational Consultancy | Study in Turkey with Trusted University Partners',
+  description: 'Expert guidance for international students applying to Turkish universities. Fast application support, document review, visa assistance, and multilingual WhatsApp support.',
+  openGraph: {
+    title: 'Horizon Educational Consultancy',
+    description: 'Study in Turkey with trusted university partnerships, fast admissions and multilingual student support.',
+    images: [
+      {
+        url: '/images/hero-bg.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Horizon Educational Consultancy - Study in Turkey'
+      }
+    ]
+  },
   icons: {
     icon: '/images/logo.png',
     shortcut: '/images/logo.png',
