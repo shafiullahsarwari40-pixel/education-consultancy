@@ -123,7 +123,7 @@ export default function Navbar() {
             )}
           </div>
 
-          <a href="#application" className="button button-primary button-small desktop" onClick={closeAll}>
+          <a href="#application-timeline" className="button button-primary button-small desktop" onClick={closeAll}>
             {t('nav.apply')}
           </a>
 
@@ -158,7 +158,7 @@ export default function Navbar() {
               <button onClick={() => changeLang('da')}>دری</button>
               <button onClick={() => changeLang('ps')}>پښتو</button>
             </div>
-            <a href="#application" className="button button-primary button-large mobile-apply" onClick={closeAll}>{t('nav.apply')}</a>
+            <a href="#application-timeline" className="button button-primary button-large mobile-apply" onClick={closeAll}>{t('nav.apply')}</a>
           </div>
         </div>
       )}
