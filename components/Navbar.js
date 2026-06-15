@@ -59,6 +59,7 @@ export default function Navbar() {
     { href: '#universities', label: t('nav.universities') },
     { href: '#programs', label: t('nav.programs') },
     { href: '#contact', label: t('nav.contact') },
+    { href: '/student/result', label: t('nav.seeResult') },
     { href: '/admin/login', label: 'Admin' },
   ];
 
