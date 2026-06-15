@@ -3,9 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useLanguage } from '../lib/LanguageContext';
-import { supabase } from '../lib/supabaseClient';
 
 const SocialIcon = ({ name, href, label }) => {
   if (name === 'instagram') {
@@ -37,45 +35,14 @@ const SocialIcon = ({ name, href, label }) => {
       </a>
     );
   }
-  if (name === 'telegram') {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="social-btn">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-          <path d="M21.5 3.5L2.5 10.5l4.5 1.5L9 19l2.5-3 4 3 5-15z" />
-        </svg>
-      </a>
-    );
-  }
 };
 
 export default function Navbar() {
-  const router = useRouter();
   const { language, changeLanguage, t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [desktopMoreOpen, setDesktopMoreOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-  const [session, setSession] = useState(null);
-  const [loadingSession, setLoadingSession] = useState(true);
 
-  const isRTL = language === 'fa' || language === 'ps';
-
-  useEffect(() => {
-    if (!supabase) {
-      setLoadingSession(false);
-      return;
-    }
-
-    (async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        setSession(data?.session || null);
-      } catch (err) {
-        console.error('Session fetch error:', err);
-      } finally {
-        setLoadingSession(false);
-      }
-    })();
-  }, []);
+  const isRTL = language === 'da' || language === 'ps';
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -85,32 +52,20 @@ export default function Navbar() {
     };
   }, [mobileOpen]);
 
-  function handleResultClick(e) {
-    e.preventDefault();
-    if (session) {
-      router.push('/student/result');
-    } else {
-      router.push('/student/auth?redirect=/student/result');
-    }
-    closeAll();
-  }
-
   const navItems = [
-    { href: '/', label: t('nav.home') },
     { href: '#about', label: t('nav.about') },
     { href: '#why-turkey', label: t('nav.whyTurkey') },
     { href: '#services', label: t('nav.services') },
     { href: '#universities', label: t('nav.universities') },
     { href: '#programs', label: t('nav.programs') },
     { href: '#contact', label: t('nav.contact') },
+    { href: '/admin/login', label: 'Admin' },
   ];
 
-  const langNames = { en: 'English', fa: 'فارسی', ps: 'پښتو', ar: 'العربية', fr: 'Français', tr: 'Türkçe', ur: 'اردو', hi: 'हिन्दी' };
-  const currentLangLabel = langNames[language] || language.toUpperCase();
+  const langNames = { en: 'English', tr: 'Türkçe', da: 'دری', ps: 'پښتو' };
 
   function closeAll() {
     setMobileOpen(false);
-    setDesktopMoreOpen(false);
     setLangOpen(false);
   }
 
@@ -118,79 +73,59 @@ export default function Navbar() {
     changeLanguage(l);
     setLangOpen(false);
     setMobileOpen(false);
-    setDesktopMoreOpen(false);
   }
 
   return (
     <header dir={isRTL ? 'rtl' : 'ltr'} className="navbar">
-      <div className="navbar-inner header">
-          <div className="navbarLogo logoWrap">
-          <Link href="/" className="navbar-logo" onClick={closeAll}>
-            <Image
-              src="/images/logo.png"
-              alt={`${t('brand.name')} logo`}
-              width={150}
-              height={36}
-              style={{ objectFit: 'contain', background: 'transparent' }}
-              sizes="(max-width: 767px) 120px, 150px"
-              priority
-            />
-          </Link>
-        </div>
+      <div className="navbar-inner">
+        {/* LEFT: Logo */}
+        <Link href="/" className="navbar-logo" onClick={closeAll}>
+          <Image
+            src="/images/logo.png"
+            alt="Horizon logo"
+            width={150}
+            height={36}
+            style={{ objectFit: 'contain', background: 'transparent' }}
+            sizes="(max-width: 767px) 120px, 150px"
+            priority
+          />
+        </Link>
 
-        <div className="navbar-social-left desktop" aria-label="Social links left">
-          <SocialIcon name="instagram" href="https://www.instagram.com/heceducons" label="Instagram" />
-          <SocialIcon name="facebook" href="https://www.facebook.com/profile.php?id=61590645456268" label="Facebook" />
-        </div>
-
-        <nav className="navbarLinks navLinks navbar-menu desktop" aria-label="Primary navigation">
+        {/* CENTER: Navigation */}
+        <nav className="navbar-menu desktop" aria-label="Primary navigation">
           {navItems.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              onClick={closeAll}
-              className={`nav-link ${(item.href === '#programs' || item.href === '#universities') ? 'hide-below-1100' : ''}`}
-            >
+            <a key={item.href} href={item.href} onClick={closeAll}>
               {item.label}
             </a>
           ))}
         </nav>
 
-        <div className="rightControls navbarActions navbar-right">
-          {!loadingSession && (
-            <a href="/student/result" className="button button-outline button-small desktop result-btn" onClick={handleResultClick}>
-              {t('nav.seeResult')}
-            </a>
-          )}
+        {/* RIGHT: Social + Language + Button */}
+        <div className="navbar-right">
+          <div className="navbar-social">
+            <SocialIcon name="instagram" href="https://www.instagram.com/heceducons" label="Instagram" />
+            <SocialIcon name="facebook" href="https://www.facebook.com/profile.php?id=61590645456268" label="Facebook" />
+            <SocialIcon name="whatsapp" href="https://whatsapp.com/channel/0029VbClkJs5q08dSxjVU32R" label="WhatsApp" />
+          </div>
 
-          <a href="/apply" className="button button-primary button-small desktop apply-btn" onClick={closeAll}>
-            {t('nav.apply')}
-          </a>
-
-          <div className="moreMenuWrapper desktop">
-            <button
-              className={`more-btn desktop ${desktopMoreOpen ? 'open' : ''}`}
-              onClick={() => setDesktopMoreOpen((s) => !s)}
-              aria-expanded={desktopMoreOpen}
-              aria-haspopup="menu"
-              aria-label={desktopMoreOpen ? 'Close more menu' : 'Open more menu'}
-            >
-              ⋯
+          <div className="language-switcher desktop">
+            <button className="lang-toggle" onClick={() => setLangOpen((s) => !s)} aria-expanded={langOpen} aria-label="Language">
+              {langNames[language]}
             </button>
-            {desktopMoreOpen && (
-              <div className="more-menu" role="menu">
-                <a href="/admin/login" onClick={closeAll} role="menuitem">
-                  {t('nav.admin')}
-                </a>
-                <div className="more-social" role="group" aria-label="Social links">
-                  <SocialIcon name="whatsapp" href="https://whatsapp.com/channel/0029VbClkJs5q08dSxjVU32R" label="WhatsApp" />
-                  <SocialIcon name="telegram" href="https://t.me/horizonedu" label="Telegram" />
-                </div>
+            {langOpen && (
+              <div className="lang-dropdown">
+                <button onClick={() => changeLang('en')}>English</button>
+                <button onClick={() => changeLang('tr')}>Türkçe</button>
+                <button onClick={() => changeLang('da')}>دری</button>
+                <button onClick={() => changeLang('ps')}>پښتو</button>
               </div>
             )}
           </div>
 
-          {/* mobile hamburger remains for small screens */}
+          <a href="#application" className="button button-primary button-small desktop" onClick={closeAll}>
+            {t('nav.apply')}
+          </a>
+
           <button
             className={`menu-toggle mobile ${mobileOpen ? 'open' : ''}`}
             onClick={() => setMobileOpen((s) => !s)}
@@ -210,19 +145,19 @@ export default function Navbar() {
               {navItems.map((item) => (
                 <a key={item.href} href={item.href} onClick={closeAll}>{item.label}</a>
               ))}
-              <a href="/admin/login" onClick={closeAll}>{t('nav.admin')}</a>
-              {!loadingSession && (
-                <a href="/student/result" onClick={handleResultClick}>{t('nav.seeResult')}</a>
-              )}
             </nav>
             <div className="mobile-social">
               <SocialIcon name="instagram" href="https://www.instagram.com/heceducons" label="Instagram" />
               <SocialIcon name="facebook" href="https://www.facebook.com/profile.php?id=61590645456268" label="Facebook" />
               <SocialIcon name="whatsapp" href="https://whatsapp.com/channel/0029VbClkJs5q08dSxjVU32R" label="WhatsApp" />
-              <SocialIcon name="telegram" href="https://t.me/horizonedu" label="Telegram" />
             </div>
-            {/* Language changer moved to floating control; mobile menu no longer contains language buttons */}
-            <a href="/apply" className="button button-primary button-large mobile-apply" onClick={closeAll}>{t('nav.apply')}</a>
+            <div className="mobile-language">
+              <button onClick={() => changeLang('en')}>English</button>
+              <button onClick={() => changeLang('tr')}>Türkçe</button>
+              <button onClick={() => changeLang('da')}>دری</button>
+              <button onClick={() => changeLang('ps')}>پښتو</button>
+            </div>
+            <a href="#application" className="button button-primary button-large mobile-apply" onClick={closeAll}>{t('nav.apply')}</a>
           </div>
         </div>
       )}
