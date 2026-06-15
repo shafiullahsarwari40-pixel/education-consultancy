@@ -27,7 +27,7 @@
 4. Restart your dev server
    ├─ Stop: Ctrl+C in terminal
    ├─ Restart: npm run dev
-   └─ Go to http://localhost:3000 ✓
+   └─ Go to https://horizoneducon.com ✓
 ```
 
 ---
@@ -48,12 +48,12 @@
 
 ## 🧪 Quick Test After Setup
 
-1. **Student signup**: http://localhost:3000/student/auth
+1. **Student signup**: https://horizoneducon.com/student/auth
    - Click "Sign Up"
    - Enter email + password
    - ✓ Account created
 
-2. **Student login**: http://localhost:3000/student/auth
+2. **Student login**: https://horizoneducon.com/student/auth
    - Click "Sign In"
    - Enter same credentials
    - ✓ Redirects to /apply
@@ -63,7 +63,7 @@
    - Logged in? → Shows application status page
    - ✓ Smart redirect works
 
-4. **Submit application**: http://localhost:3000/apply
+4. **Submit application**: https://horizoneducon.com/apply
    - Fill form
    - Click Submit
    - ✓ Success modal appears

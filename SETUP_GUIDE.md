@@ -86,7 +86,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ## Phase 3: Test the System
 
 ### Test 1: Student Signup
-1. Open http://localhost:3000/student/auth
+1. Open https://horizoneducon.com/student/auth
 2. Click "Sign Up" toggle
 3. Enter email and password
 4. Click "Create Account"
@@ -99,7 +99,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 4. Expected: Redirected to `/apply` page (if redirect was provided)
 
 ### Test 3: Protected Apply Page
-1. Open http://localhost:3000/apply while logged out
+1. Open https://horizoneducon.com/apply while logged out
 2. Expected: Redirected to `/student/auth?redirect=/apply`
 3. After login: Should see the application form
 
@@ -112,7 +112,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ### Test 5: Admin Status Update
 This requires direct API call or admin dashboard update:
 ```bash
-curl -X PATCH http://localhost:3000/api/admin/applications/[APPLICATION_ID]/status \
+curl -X PATCH https://horizoneducon.com/api/admin/applications/[APPLICATION_ID]/status \
   -H "Authorization: Bearer [YOUR_SESSION_TOKEN]" \
   -H "Content-Type: application/json" \
   -d '{
@@ -126,7 +126,7 @@ curl -X PATCH http://localhost:3000/api/admin/applications/[APPLICATION_ID]/stat
 ## Phase 4: Admin Features (Recommended Setup)
 
 ### Access Admin Dashboard
-1. Go to http://localhost:3000/admin/login
+1. Go to https://horizoneducon.com/admin/login
 2. Login with your admin credentials
 3. Go to **Applications**
 

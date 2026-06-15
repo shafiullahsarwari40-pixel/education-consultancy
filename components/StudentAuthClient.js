@@ -54,7 +54,11 @@ export default function StudentAuthClient() {
     try {
       let result;
       if (isSignUp) {
-        result = await supabase.auth.signUp({ email, password });
+        const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback?returnTo=/student/dashboard` : 'https://horizoneducon.com/auth/callback?returnTo=/student/dashboard';
+        result = await supabase.auth.signUp(
+          { email, password },
+          { emailRedirectTo: redirectUrl }
+        );
       } else {
         result = await supabase.auth.signInWithPassword({ email, password });
       }

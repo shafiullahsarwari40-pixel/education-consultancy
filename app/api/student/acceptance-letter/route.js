@@ -53,13 +53,21 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Acceptance letter not available' }, { status: 404 });
   }
 
-  const { data: signed, error: urlError } = await supabaseAdmin.storage
+  // Download the file from storage
+  const { data: fileBuffer, error: downloadError } = await supabaseAdmin.storage
     .from('acceptance-letters')
-    .createSignedUrl(path, 60);
+    .download(path);
 
-  if (urlError || !signed?.signedUrl) {
-    return NextResponse.json({ error: urlError?.message || 'Unable to generate download link' }, { status: 500 });
+  if (downloadError || !fileBuffer) {
+    return NextResponse.json({ error: downloadError?.message || 'Failed to download file' }, { status: 500 });
   }
 
-  return NextResponse.redirect(signed.signedUrl);
+  // Return the file with download headers
+  return new NextResponse(fileBuffer, {
+    headers: {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename="acceptance-letter.pdf"',
+      'Content-Length': fileBuffer.size || fileBuffer.length,
+    },
+  });
 }

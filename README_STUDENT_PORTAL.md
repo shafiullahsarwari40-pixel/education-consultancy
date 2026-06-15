@@ -76,7 +76,7 @@ Time: 30 seconds
 
 ### 5. Test the System
 ```
-Open: http://localhost:3000
+Open: https://horizoneducon.com
 Follow: SETUP_GUIDE.md Phase 3 (12-step checklist)
 Time: 10 minutes
 ```

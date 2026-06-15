@@ -1,9 +1,9 @@
 const urls = [
-  'http://localhost:3000/',
-  'http://localhost:3000/student/signup',
-  'http://localhost:3000/student/login',
-  'http://localhost:3000/student/dashboard',
-  'http://localhost:3000/api/submit',
+  'https://horizoneducon.com/',
+  'https://horizoneducon.com/student/signup',
+  'https://horizoneducon.com/student/login',
+  'https://horizoneducon.com/student/dashboard',
+  'https://horizoneducon.com/api/submit',
 ];
 
 (async () => {

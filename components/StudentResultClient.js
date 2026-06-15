@@ -305,9 +305,7 @@ export default function StudentResultClient() {
             <h3 style={{ marginTop: 0 }}>Acceptance Letter</h3>
             {hasAcceptanceLetter ? (
               <a
-                href={application.acceptance_letter_url}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/api/student/acceptance-letter"
                 className="button button-primary"
                 style={{ display: 'inline-block' }}
               >
