@@ -10,19 +10,18 @@ async function requireAdmin(request) {
   if (userErr || !userData?.user) return { ok: false, status: 401, body: { error: 'Invalid auth token' } };
 
   const user = userData.user;
-  // Check admins table for this user's email
-  const { data: admins, error: adminErr } = await supabaseAdmin
-    .from('admins')
-    .select('email')
-    .ilike('email', user.email)
-    .limit(1);
+  const { data: profiles, error: profileErr } = await supabaseAdmin
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
 
-  if (adminErr) {
+  if (profileErr) {
     return { ok: false, status: 500, body: { error: 'Admin lookup failed' } };
   }
 
-  if (!admins || admins.length === 0) {
-    return { ok: false, status: 403, body: { error: `Forbidden: admin only (no admin record for ${user.email})` } };
+  if (profiles?.role !== 'admin') {
+    return { ok: false, status: 403, body: { error: `Forbidden: admin only (no admin role for ${user.email})` } };
   }
 
   return { ok: true, user };
@@ -41,8 +40,8 @@ export async function GET(request) {
   // Fetch applications with optional search and sorting
   let query = supabaseAdmin.from('applications').select('*').order('created_at', { ascending: sort === 'asc' });
   if (search) {
-    // simple OR search on name and email
-    query = query.ilike('full_name', `%${search}%`).or(`email.ilike.%${search}%`);
+    const searchTerm = `%${search}%`;
+    query = query.or(`full_name.ilike.${searchTerm},email.ilike.${searchTerm}`);
   }
 
   const { data: applications, error } = await query;
@@ -51,9 +50,9 @@ export async function GET(request) {
   // Stats
   const statsQueries = await Promise.all([
     supabaseAdmin.from('applications').select('id', { count: 'exact' }),
-    supabaseAdmin.from('applications').select('id', { count: 'exact' }).eq('status', 'New'),
-    supabaseAdmin.from('applications').select('id', { count: 'exact' }).eq('status', 'Accepted'),
-    supabaseAdmin.from('applications').select('id', { count: 'exact' }).eq('status', 'Rejected'),
+    supabaseAdmin.from('applications').select('id', { count: 'exact' }).eq('application_status', 'submitted'),
+    supabaseAdmin.from('applications').select('id', { count: 'exact' }).eq('application_status', 'accepted'),
+    supabaseAdmin.from('applications').select('id', { count: 'exact' }).eq('application_status', 'rejected'),
     supabaseAdmin
       .from('applications')
       .select('id', { count: 'exact' })

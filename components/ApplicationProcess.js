@@ -1,36 +1,40 @@
 'use client';
 
+import { useLanguage } from '../lib/LanguageContext';
+
 export default function ApplicationProcess() {
+  const { t } = useLanguage();
+
   const steps = [
     {
       number: '1',
-      title: 'Free Consultation',
-      description: 'Student contacts Horizon and shares goals.'
+      title: t('timeline.submitApplication'),
+      description: t('timeline.description')
     },
     {
       number: '2',
-      title: 'Document Preparation',
-      description: 'Student prepares passport, diploma, transcript, photo, and files.'
+      title: t('timeline.documentsChecked'),
+      description: t('timeline.documentsChecked')
     },
     {
       number: '3',
-      title: 'University Application',
-      description: 'Horizon helps submit applications and follow up.'
+      title: t('timeline.universitySelection'),
+      description: t('timeline.universitySelection')
     },
     {
       number: '4',
-      title: 'Admission & Visa',
-      description: 'Student receives acceptance, prepares visa, and plans arrival.'
-    },
+      title: t('timeline.acceptanceLetter'),
+      description: t('timeline.visaGuidance')
+    }
   ];
 
   return (
     <section className="section">
       <div className="container">
         <div className="section-header">
-          <span className="section-label">How It Works</span>
-          <h2>Simple Application Process</h2>
-          <p>Start your journey to studying in Turkey in a few clear steps.</p>
+          <span className="section-label">{t('timeline.label')}</span>
+          <h2>{t('timeline.title')}</h2>
+          <p>{t('timeline.description')}</p>
         </div>
 
         <div className="timeline">

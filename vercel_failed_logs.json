@@ -1,0 +1,1 @@
+﻿{"type":"deployment_error","message":"Logs are unavailable because deployment dpl_7w7HE8b9Y2nD8ywNSWPDyNqyTP6B never reached READY and ended in ERROR. Run `vercel inspect https://education-consultancy-ich5vovw2-shafiullah-s-projects1.vercel.app --scope shafiullah-s-projects1` for deployment details."}

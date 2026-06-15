@@ -61,9 +61,9 @@ export default function Services() {
     <section className="section" id="services">
       <div className="container">
         <div className="section-header">
-          <span className="section-label">What We Offer</span>
-          <h2>Comprehensive Student Services</h2>
-          <p>From application to arrival, Horizon supports students step by step with professional guidance and reliable assistance.</p>
+          <span className="section-label">{t('services.label')}</span>
+          <h2>{t('services.title')}</h2>
+          <p>{t('services.description')}</p>
         </div>
 
         <div className="cards-grid">

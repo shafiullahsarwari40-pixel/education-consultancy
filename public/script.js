@@ -17,7 +17,7 @@ const translations = {
     nav_universities: 'Universities',
     nav_programs: 'Programs',
     nav_contact: 'Contact',
-    nav_apply: 'Apply Now',
+    nav_apply: 'Apply',
     hero_eyebrow: 'International Education Consultancy',
     hero_heading: 'Study abroad with expert guidance.',
     hero_text: 'Horizon helps international students apply, get scholarships, secure visas, and start their studies in Turkey and beyond.',
@@ -74,7 +74,7 @@ const translations = {
     contact_email: 'horizon@horizon-edu.net',
     footer_text: 'www.activcampus.com'
   },
-  da: {
+  fa: {
     language_header: 'زبان را انتخاب کنید',
     language_text: 'لطفاً زبان مورد نظر خود را برای ادامه انتخاب کنید.',
     nav_about: 'درباره ما',
@@ -100,6 +100,67 @@ const translations = {
     services_label: 'خدمات ما',
     services_title: 'پشتیبانی کامل دانشجویی',
     services_text: 'هر چیزی که برای پذیرش موفق، مهاجرت و زندگی تحصیلی نیاز دارید.',
+    contact_email: 'horizon@horizon-edu.net',
+    footer_text: 'www.activcampus.com'
+  },
+  ar: {
+    // Arabic placeholders
+    language_header: 'اختر لغتك',
+    language_text: 'الرجاء اختيار لغتك المفضلة للمتابعة.',
+    nav_about: 'من نحن',
+    nav_services: 'الخدمات',
+    nav_universities: 'الجامعات',
+    nav_programs: 'البرامج',
+    nav_contact: 'تواصل',
+    nav_apply: 'قدم الآن',
+    contact_email: 'horizon@horizon-edu.net',
+    footer_text: 'www.activcampus.com'
+  },
+  fr: {
+    // French placeholders
+    language_header: 'Choisissez votre langue',
+    language_text: "Veuillez sélectionner votre langue préférée pour continuer.",
+    nav_about: 'À propos',
+    nav_services: 'Services',
+    nav_universities: 'Universités',
+    nav_programs: 'Programmes',
+    nav_contact: 'Contact',
+    nav_apply: 'Postuler',
+    contact_email: 'horizon@horizon-edu.net',
+    footer_text: 'www.activcampus.com'
+  }
+  ,
+  ur: {
+    language_header: 'اپنی زبان منتخب کریں',
+    language_text: 'براہ کرم جاری رکھنے کے لیے اپنی پسندیدہ زبان منتخب کریں۔',
+    nav_about: 'ہمارے بارے میں',
+    nav_services: 'خدمات',
+    nav_universities: 'جامعات',
+    nav_programs: 'پروگرام',
+    nav_contact: 'رابطہ',
+    nav_apply: 'درخواست دیں',
+    hero_eyebrow: 'بین الاقوامی تعلیمی مشاورت',
+    hero_heading: 'ماہر رہنمائی کے ساتھ بیرون ملک تعلیم حاصل کریں۔',
+    hero_text: 'Horizon بین الاقوامی طلبہ کو ترکی اور دیگر مقامات پر یونیورسٹی درخواستوں، اسکالرشپ اور ویزا میں مدد کرتا ہے۔',
+    hero_cta1: 'مفت مشاورت',
+    hero_cta2: 'ہماری خدمات',
+    contact_email: 'horizon@horizon-edu.net',
+    footer_text: 'www.activcampus.com'
+  },
+  hi: {
+    language_header: 'अपनी भाषा चुनें',
+    language_text: 'कृपया जारी रखने के लिए अपनी पसंदीदा भाषा चुनें।',
+    nav_about: 'हमारे बारे में',
+    nav_services: 'सेवाएँ',
+    nav_universities: 'विश्वविद्यालय',
+    nav_programs: 'प्रोग्राम',
+    nav_contact: 'संपर्क',
+    nav_apply: 'अभिनेता करें',
+    hero_eyebrow: 'अंतरराष्ट्रीय शैक्षिक परामर्श',
+    hero_heading: 'विशेष मार्गदर्शन के साथ विदेश में पढ़ें।',
+    hero_text: 'Horizon अंतरराष्ट्रीय छात्रों को तुर्की और अन्य जगहों पर आवेदन, छात्रवृत्ति और वीज़ा में मदद करता है।',
+    hero_cta1: 'मुफ्त परामर्श',
+    hero_cta2: 'हमारी सेवाएँ',
     contact_email: 'horizon@horizon-edu.net',
     footer_text: 'www.activcampus.com'
   }
@@ -134,6 +195,8 @@ const translations = {
     });
 
     try {
+      localStorage.setItem('appLanguage', lang);
+      // keep legacy key for backward compatibility
       localStorage.setItem('horizonLanguage', lang);
     } catch (e) {
       // ignore storage errors
@@ -180,7 +243,7 @@ const translations = {
     // only open modal if there is a modal element present
     const savedLanguage = (function () {
       try {
-        return localStorage.getItem('horizonLanguage');
+        return localStorage.getItem('appLanguage') || localStorage.getItem('horizonLanguage');
       } catch (e) {
         return null;
       }

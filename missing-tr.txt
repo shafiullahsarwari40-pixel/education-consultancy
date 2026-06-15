@@ -1,0 +1,44 @@
+tr: 42
+---
+ 
+*
+.
+/
+?
+Education Consultation Request
+Please fill in your name, email, and phone number.
+Unable to open document.
+acceptance_letter_path
+address
+admin_note
+agent.becomeAgent
+agent.contactCTA
+agent.program
+authorization
+bucket
+content-type
+country
+email
+father_name
+file
+footer.copyrightFull
+footer.privacy
+footer.terms
+full_name
+id, user_id
+id,role,email
+message
+mother_name
+path
+phone
+program
+programs.${program.key}
+publicUrl
+redirect
+rejection_message
+role
+search
+sort
+status
+uni
+university

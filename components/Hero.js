@@ -68,7 +68,7 @@ export default function Hero() {
             {t('hero.description')}
           </p>
           <div className="hero-actions">
-            <a href="#application" className="button button-primary button-large">
+            <a href="/apply" className="button button-primary button-large">
               {t('hero.applyBtn')}
             </a>
             <a

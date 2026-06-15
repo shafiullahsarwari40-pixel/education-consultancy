@@ -1,0 +1,90 @@
+﻿main
+origin	https://github.com/shafiullahsarwari40-pixel/education-consultancy.git (fetch)
+origin	https://github.com/shafiullahsarwari40-pixel/education-consultancy.git (push)
+ M app/admin/login/page.js
+ M app/admin/page.js
+ M app/api/admin/applications/[id]/route.js
+ M app/api/admin/applications/route.js
+ M app/api/admin/contact-messages/route.js
+ M app/api/admin/document/route.js
+ M app/api/submit/route.js
+ M app/apply/page.js
+ M app/globals.css
+ M app/layout.js
+ M app/page.js
+ M components/AgentPartnership.js
+ M components/ApplicationDetailClient.js
+ M components/ApplicationForm.js
+ M components/ApplicationProcess.js
+ M components/Contact.js
+ M components/FAQSection.js
+ M components/FollowHorizon.js
+ M components/Footer.js
+ M components/Hero.js
+ M components/Navbar.js
+ M components/Services.js
+ M components/SocialIcon.js
+ M components/SocialProof.js
+ M components/Universities.js
+ M components/WhatsAppButton.js
+ M index.html
+ M lib/LanguageContext.js
+ M lib/supabaseAdmin.js
+ M lib/supabaseClient.js
+ M lib/translations.js
+ M next.config.mjs
+ M public/images/universities/adiyaman-university.svg
+ M public/images/universities/usak-university.svg
+ M public/images/university-campus-2.webp
+ M public/script.js
+ M script.js
+ M styles_new.css
+?? DATABASE_SCHEMA.sql
+?? IMPLEMENTATION_CHECKLIST.md
+?? QUICK_START.md
+?? README_STUDENT_PORTAL.md
+?? SESSION_SUMMARY.md
+?? SETUP_GUIDE.md
+?? app/api/admin/applications/[id]/letter/
+?? app/api/admin/applications/[id]/status/
+?? app/api/student/
+?? app/student/
+?? components/ApplicationProcessTimeline.js
+?? components/EnhancedWhyChoose.js
+?? components/FloatingLanguageChanger.js
+?? components/StudentAuthClient.js
+?? components/StudentDashboard.js
+?? components/StudentDashboardClient.js
+?? components/StudentResultClient.js
+?? components/SuccessStories.js
+?? download_university_logos.js
+?? generate_university_logos.js
+?? homepage_translation_report.json
+?? missing-agent.txt
+?? missing-da.txt
+?? missing-en.txt
+?? missing-ps.txt
+?? missing-tr.txt
+?? parse_homepage_lang_report.js
+?? parse_homepage_translation_keys.js
+?? parse_translation_keys.js
+?? public/robots.txt
+?? public/sitemap.xml
+?? repair-env.js
+?? scripts/
+?? supabase-migration-student-dashboard.sql
+?? temp-check.js
+?? temp-route-test.js
+?? temp-supabase-auth-check.js
+?? temp-supabase-check.mjs
+?? temp-validate-keys.js
+?? temp_git_info.txt
+?? tmp-env-debug.js
+?? tmp-supabase-debug.js
+?? tmp-supabase-token-check.js
+?? tmp-supabase-user-fetch.js
+?? tmp_homepage.html
+?? translation-key-check.js
+?? translation-report-utf8.json
+?? translation-report.json
+?? translation_key_report.json

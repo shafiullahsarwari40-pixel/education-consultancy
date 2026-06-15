@@ -10,9 +10,14 @@ async function requireAdmin(request) {
   if (userErr || !userData?.user) return { ok: false, status: 401, body: { error: 'Invalid auth token' } };
 
   const user = userData.user;
-  const { data: admins, error: adminErr } = await supabaseAdmin.from('admins').select('email').ilike('email', user.email).limit(1);
-  if (adminErr) return { ok: false, status: 500, body: { error: 'Admin lookup failed' } };
-  if (!admins || admins.length === 0) return { ok: false, status: 403, body: { error: `Forbidden: admin only (no admin record for ${user.email})` } };
+  const { data: profile, error: profileErr } = await supabaseAdmin
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profileErr) return { ok: false, status: 500, body: { error: 'Admin lookup failed' } };
+  if (profile?.role !== 'admin') return { ok: false, status: 403, body: { error: `Forbidden: admin only (no admin role for ${user.email})` } };
 
   return { ok: true, user };
 }
@@ -56,14 +61,21 @@ export async function GET(request, { params }) {
   const { data: appData, error } = await supabaseAdmin.from('applications').select('*').eq('id', id).limit(1).single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  let applicationWithUrl = appData;
+  if (appData?.acceptance_letter_path) {
+    const { data: signed, error: signedError } = await supabaseAdmin.storage
+      .from('acceptance-letters')
+      .createSignedUrl(appData.acceptance_letter_path, 3600);
+
+    if (!signedError && signed?.signedUrl) {
+      applicationWithUrl = { ...appData, acceptance_letter_url: signed.signedUrl };
+    }
+  }
+
   const { data: docs } = await supabaseAdmin.from('application_documents').select('*').eq('application_id', id).limit(1);
   const documentRecord = docs?.[0] || null;
 
-  if (documentRecord) {
-    return NextResponse.json({ application: appData, documents: documentRecord });
-  }
-
-  return NextResponse.json({ application: appData, documents: null });
+  return NextResponse.json({ application: applicationWithUrl, documents: documentRecord });
 }
 
 export async function PATCH(request, { params }) {
@@ -79,10 +91,21 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: `Invalid application id: ${String(id)}`, received: request.url }, { status: 400 });
   }
   const body = await request.json();
-  const { status } = body;
-  if (!status) return NextResponse.json({ error: 'Missing status' }, { status: 400 });
+  const { status, admin_note } = body;
+  if (!status && typeof admin_note === 'undefined') {
+    return NextResponse.json({ error: 'Missing status or admin note' }, { status: 400 });
+  }
 
-  const { data, error } = await supabaseAdmin.from('applications').update({ status }).eq('id', id).select().limit(1).single();
+  const updatePayload = {};
+  if (status) {
+    updatePayload.application_status = status;
+    updatePayload.status_updated_at = new Date().toISOString();
+  }
+  if (typeof admin_note !== 'undefined') {
+    updatePayload.admin_note = admin_note;
+  }
+
+  const { data, error } = await supabaseAdmin.from('applications').update(updatePayload).eq('id', id).select().limit(1).single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ success: true, application: data });

@@ -1,0 +1,115 @@
+﻿node.exe : Vercel CLI 54.13.0 (Node.js 24.16.0)
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Vercel CLI 54.13.0 (Node.js 24.16 
+   .0):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Fetching deployment 
+"education-consultancy-ich5vovw2-shafiullah-s-projects1.vercel.app" in 
+shafiullah-s-projects1
+2026-06-15T15:42:32.967Z  Running build in Washington, D.C., USA (East) ΓÇô 
+iad1
+2026-06-15T15:42:32.968Z  Build machine configuration: 2 cores, 8 GB
+2026-06-15T15:42:33.100Z  Cloning 
+github.com/shafiullahsarwari40-pixel/education-consultancy (Branch: main, 
+Commit: 5d69e3d)
+2026-06-15T15:42:34.054Z  Cloning completed: 954.000ms
+2026-06-15T15:42:34.133Z  Restored build cache from previous deployment 
+(9kRy9xxWg93jQQFEV9CCSHvSKCkw)
+2026-06-15T15:42:34.349Z  Running "vercel build"
+2026-06-15T15:42:34.370Z  Vercel CLI 54.12.2
+2026-06-15T15:42:34.708Z  Installing dependencies...
+2026-06-15T15:42:35.369Z  
+2026-06-15T15:42:35.370Z  up to date in 520ms
+2026-06-15T15:42:35.370Z  
+2026-06-15T15:42:35.371Z  6 packages are looking for funding
+2026-06-15T15:42:35.371Z  run `npm fund` for details
+2026-06-15T15:42:35.398Z  Detected Next.js version: 16.2.9
+2026-06-15T15:42:35.402Z  Running "npm run build"
+2026-06-15T15:42:35.508Z  
+2026-06-15T15:42:35.509Z  > education-consultancy@0.1.0 build
+2026-06-15T15:42:35.509Z  > next build
+2026-06-15T15:42:35.509Z  
+2026-06-15T15:42:36.131Z  Applying modifyConfig from Vercel
+2026-06-15T15:42:36.210Z  Γû▓ Next.js 16.2.9 (Turbopack)
+2026-06-15T15:42:36.211Z  
+2026-06-15T15:42:36.245Z  Creating an optimized production build ...
+2026-06-15T15:42:45.001Z  
+2026-06-15T15:42:45.002Z  > Build error occurred
+2026-06-15T15:42:45.004Z  Error: Turbopack build failed with 3 errors:
+2026-06-15T15:42:45.005Z  ./app/page.js:20:1
+2026-06-15T15:42:45.005Z  Module not found: Can't resolve 
+'../components/ApplicationProcessTimeline'
+2026-06-15T15:42:45.005Z  18 | import SuccessStories from 
+'../components/SuccessStories';
+2026-06-15T15:42:45.005Z  19 | import StudentDashboard from 
+'../components/StudentDashboard';
+2026-06-15T15:42:45.005Z  > 20 | import ApplicationProcessTimeline from 
+'../components/ApplicationProcessTimeline';
+2026-06-15T15:42:45.005Z  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-15T15:42:45.005Z  21 |
+2026-06-15T15:42:45.006Z  22 | export default function Home() {
+2026-06-15T15:42:45.006Z  23 |   return (
+2026-06-15T15:42:45.006Z  
+2026-06-15T15:42:45.006Z  
+2026-06-15T15:42:45.006Z  
+2026-06-15T15:42:45.006Z  https://nextjs.org/docs/messages/module-not-found
+2026-06-15T15:42:45.006Z  
+2026-06-15T15:42:45.006Z  
+2026-06-15T15:42:45.006Z  ./app/page.js:19:1
+2026-06-15T15:42:45.006Z  Module not found: Can't resolve 
+'../components/StudentDashboard'
+2026-06-15T15:42:45.006Z  17 | import SocialProof from 
+'../components/SocialProof';
+2026-06-15T15:42:45.007Z  18 | import SuccessStories from 
+'../components/SuccessStories';
+2026-06-15T15:42:45.007Z  > 19 | import StudentDashboard from 
+'../components/StudentDashboard';
+2026-06-15T15:42:45.007Z  | 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-15T15:42:45.007Z  20 | import ApplicationProcessTimeline from 
+'../components/ApplicationProcessTimeline';
+2026-06-15T15:42:45.007Z  21 |
+2026-06-15T15:42:45.007Z  22 | export default function Home() {
+2026-06-15T15:42:45.007Z  
+2026-06-15T15:42:45.007Z  
+2026-06-15T15:42:45.007Z  
+2026-06-15T15:42:45.007Z  https://nextjs.org/docs/messages/module-not-found
+2026-06-15T15:42:45.007Z  
+2026-06-15T15:42:45.007Z  
+2026-06-15T15:42:45.007Z  ./app/page.js:18:1
+2026-06-15T15:42:45.008Z  Module not found: Can't resolve 
+'../components/SuccessStories'
+2026-06-15T15:42:45.008Z  16 | import FAQSection from 
+'../components/FAQSection';
+2026-06-15T15:42:45.008Z  17 | import SocialProof from 
+'../components/SocialProof';
+2026-06-15T15:42:45.008Z  > 18 | import SuccessStories from 
+'../components/SuccessStories';
+2026-06-15T15:42:45.008Z  | 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-15T15:42:45.008Z  19 | import StudentDashboard from 
+'../components/StudentDashboard';
+2026-06-15T15:42:45.008Z  20 | import ApplicationProcessTimeline from 
+'../components/ApplicationProcessTimeline';
+2026-06-15T15:42:45.008Z  21 |
+2026-06-15T15:42:45.009Z  
+2026-06-15T15:42:45.009Z  
+2026-06-15T15:42:45.009Z  
+2026-06-15T15:42:45.009Z  https://nextjs.org/docs/messages/module-not-found
+2026-06-15T15:42:45.009Z  
+2026-06-15T15:42:45.009Z  
+2026-06-15T15:42:45.009Z  at <unknown> (./app/page.js:20:1)
+2026-06-15T15:42:45.010Z  at <unknown> 
+(https://nextjs.org/docs/messages/module-not-found)
+2026-06-15T15:42:45.010Z  at <unknown> (./app/page.js:19:1)
+2026-06-15T15:42:45.010Z  at <unknown> 
+(https://nextjs.org/docs/messages/module-not-found)
+2026-06-15T15:42:45.011Z  at <unknown> (./app/page.js:18:1)
+2026-06-15T15:42:45.011Z  at <unknown> 
+(https://nextjs.org/docs/messages/module-not-found)
+2026-06-15T15:42:45.059Z  Error: Command "npm run build" exited with 1
+status	ΓùÅ Error

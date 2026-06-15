@@ -1,0 +1,62 @@
+ps: 60
+---
+ 
+*
+.
+/
+?
+Education Consultation Request
+Please fill in your name, email, and phone number.
+Unable to open document.
+acceptance_letter_path
+address
+admin_note
+agent.becomeAgent
+agent.contactCTA
+agent.program
+auth.alreadyHaveAccount
+auth.creating
+auth.email
+auth.login
+auth.noAccount
+auth.password
+auth.password_required
+auth.signing_in
+auth.signup
+auth.submitLogin
+auth.submitSignup
+auth.success_login
+auth.success_signup
+authorization
+bucket
+content-type
+country
+email
+father_name
+file
+footer.telegram
+form.emailNote
+full_name
+id, user_id
+id,role,email
+message
+mother_name
+path
+phone
+program
+programs.${program.key}
+publicUrl
+redirect
+rejection_message
+role
+search
+sort
+status
+studentDashboard.accepted
+studentDashboard.noApplications
+studentDashboard.startApplication
+studentDashboard.submitted
+studentDashboard.title
+studentDashboard.underReview
+uni
+university

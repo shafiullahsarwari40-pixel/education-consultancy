@@ -692,16 +692,29 @@ h3 {
 }
 
 .stat-item p {
-  margin: 0;
-  font-size: 0.95rem;
-}
-
+  display: block;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.2;
 .contact {
   background: var(--text-light);
 }
 
 .contact-grid {
   display: grid;
+
+/* Make hero stats clearly visible on dark/imagery hero backgrounds */
+.hero-stats .stat-number {
+  color: #ffffff !important;
+  font-weight: 700;
+  font-size: 1.375rem;
+}
+
+.hero-stats .stat-label {
+  color: #ffffff !important;
+  opacity: 0.95;
+  font-size: 0.9rem;
+}
   grid-template-columns: 1fr 1fr;
   gap: 4rem;
   align-items: flex-start;

@@ -5,12 +5,12 @@ import { useLanguage } from '../lib/LanguageContext';
 export default function AgentPartnership() {
   const { t } = useLanguage();
   const benefits = [
-    { title: 'Student Support', description: 'Help students apply to Turkish universities' },
-    { title: 'Clear Communication', description: 'Direct access to Horizon team for inquiries' },
-    { title: 'Application Tracking', description: 'Real-time updates on application status' },
-    { title: 'Marketing Support', description: 'Marketing materials and promotional help' },
-    { title: 'WhatsApp Communication', description: 'Fast instant messaging support' },
-    { title: 'Long-Term Partnership', description: 'Ongoing cooperation and support' },
+    { title: t('agent.benefit1Title'), description: t('agent.benefit1Desc') },
+    { title: t('agent.benefit2Title'), description: t('agent.benefit2Desc') },
+    { title: t('agent.benefit3Title'), description: t('agent.benefit3Desc') },
+    { title: t('agent.benefit4Title'), description: t('agent.benefit4Desc') },
+    { title: t('agent.benefit5Title'), description: t('agent.benefit5Desc') },
+    { title: t('agent.benefit6Title'), description: t('agent.benefit6Desc') },
   ];
 
   return (
@@ -60,8 +60,26 @@ export default function AgentPartnership() {
               fontWeight: '600'
             }}
           >
-            Contact Us for Partnership
+            {t('agent.contactPartnership')}
           </a>
+          <div style={{ marginTop: '0.75rem' }}>
+            <a
+              href="mailto:horizon@horizon-edu.net?subject=Partnership%20Inquiry"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="button"
+              style={{
+                background: 'transparent',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.2)',
+                padding: '0.9rem 2rem',
+                fontSize: '0.95rem',
+                fontWeight: '600'
+              }}
+            >
+              {t('agent.emailUs')}
+            </a>
+          </div>
         </div>
       </div>
     </section>

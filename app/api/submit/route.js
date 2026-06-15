@@ -1,38 +1,13 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '../../../lib/supabaseAdmin';
+import { supabaseAdmin, supabaseAdminKeyMalformed, isInvalidSupabaseApiKeyError } from '../../../lib/supabaseAdmin';
 
-const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY || '';
-
-async function verifyRecaptcha(token) {
-  if (!RECAPTCHA_SECRET_KEY) {
-    return { success: true, disabled: true };
-  }
-
-  if (!token) {
-    return { success: false, error: 'Missing recaptcha token' };
-  }
-
-  const body = `secret=${encodeURIComponent(RECAPTCHA_SECRET_KEY)}&response=${encodeURIComponent(token)}`;
-  try {
-    const verifyResponse = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body,
-    });
-
-    const json = await verifyResponse.json();
-    return json;
-  } catch (err) {
-    console.error('reCAPTCHA verify fetch error:', err);
-    return { success: false, error: 'Failed to validate recaptcha token' };
-  }
-}
 
 export async function POST(request) {
-  if (!supabaseAdmin) {
-    return NextResponse.json({ error: 'Server Supabase client not configured' }, { status: 500 });
+  if (!supabaseAdmin || supabaseAdminKeyMalformed) {
+    return NextResponse.json(
+      { error: 'Server auth configuration invalid. Check SUPABASE_SERVICE_ROLE_KEY.' },
+      { status: 500 }
+    );
   }
 
   let formData;
@@ -53,24 +28,34 @@ export async function POST(request) {
   const program = formData.get('program') || '';
   const university = formData.get('university') || '';
   const message = formData.get('message') || '';
-  const recaptchaToken = formData.get('recaptchaToken')?.toString() || '';
+
+  const auth = request.headers.get('authorization') || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : auth;
+  if (!token) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+
+  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
+  if (userError || !userData?.user) {
+    if (isInvalidSupabaseApiKeyError(userError)) {
+      return NextResponse.json(
+        { error: 'Server auth configuration invalid. Check SUPABASE_SERVICE_ROLE_KEY.' },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json({ error: 'Invalid auth token' }, { status: 401 });
+  }
+
+  const user_id = userData.user.id;
 
   if (!full_name || !email || !phone) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  if (RECAPTCHA_SECRET_KEY) {
-    const recaptchaResult = await verifyRecaptcha(recaptchaToken);
-    if (!recaptchaResult.success) {
-      console.error('reCAPTCHA failed:', recaptchaResult);
-      return NextResponse.json({ error: recaptchaResult['error-codes'] || recaptchaResult.error || 'reCAPTCHA verification failed' }, { status: 400 });
-    }
-  }
-
   try {
     const { data: applicationData, error: appError } = await supabaseAdmin
       .from('applications')
-      .insert([{ full_name, email, phone, mother_name, father_name, address, country, program, university, message }])
+      .insert([{ full_name, email, phone, mother_name, father_name, address, country, program, university, message, user_id, application_status: 'submitted', status_updated_at: new Date().toISOString() }])
       .select();
 
     if (appError || !applicationData || applicationData.length === 0) {

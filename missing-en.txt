@@ -1,0 +1,51 @@
+en: 49
+---
+ 
+*
+.
+/
+?
+Education Consultation Request
+Please fill in your name, email, and phone number.
+Unable to open document.
+acceptance_letter_path
+address
+admin_note
+authorization
+bucket
+content-type
+country
+email
+enhancedWhy.description
+enhancedWhy.documentChecking
+enhancedWhy.documentCheckingDesc
+enhancedWhy.fastAcceptance
+enhancedWhy.fastAcceptanceDesc
+enhancedWhy.label
+enhancedWhy.languageSupport
+enhancedWhy.languageSupportDesc
+enhancedWhy.title
+enhancedWhy.universityGuidance
+enhancedWhy.universityGuidanceDesc
+enhancedWhy.whatsAppSupport
+enhancedWhy.whatsAppSupportDesc
+father_name
+file
+full_name
+id, user_id
+id,role,email
+message
+mother_name
+path
+phone
+program
+programs.${program.key}
+publicUrl
+redirect
+rejection_message
+role
+search
+sort
+status
+uni
+university

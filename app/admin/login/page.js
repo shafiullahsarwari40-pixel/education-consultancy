@@ -15,31 +15,57 @@ export default function AdminLogin() {
     e.preventDefault();
     setLoading(true);
     setMessage('');
-    // If password present, try password sign-in (fallback when emails are rate-limited)
-    if (password) {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
+
+    if (!email || !password) {
+      setMessage('Email and password are required.');
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    
+    if (error) {
+      setLoading(false);
+      setMessage(error.message);
+      return;
+    }
+
+    if (data?.session) {
+      // Verify user is admin by calling an admin endpoint
+      const verifyRes = await fetch('/api/admin/applications', {
+        headers: { Authorization: `Bearer ${data.session.access_token}` },
+      });
+
+      if (verifyRes.status === 403) {
+        // Not an admin user
+        await supabase.auth.signOut();
         setLoading(false);
-        setMessage(error.message);
+        setMessage('Access denied: This account does not have admin permissions.');
         return;
       }
+
+      if (!verifyRes.ok) {
+        // Some other error occurred
+        await supabase.auth.signOut();
+        setLoading(false);
+        setMessage('Error verifying admin status. Please try again.');
+        return;
+      }
+
+      // User is admin, redirect to dashboard
       setLoading(false);
-      setMessage('Signed in. Redirecting…');
       router.push('/admin');
       return;
     }
 
-    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined;
-    const { data, error } = await supabase.auth.signInWithOtp({ email }, { emailRedirectTo: redirectTo });
     setLoading(false);
-    if (error) setMessage(error.message);
-    else setMessage('Check your email for the sign-in link.');
+    setMessage('Signed in. Redirecting…');
   }
 
   return (
     <div style={{ maxWidth: 680, margin: '40px auto', padding: 20 }}>
       <h1>Admin Login</h1>
-      <p>Sign in with your admin email (magic link)</p>
+      <p>Sign in with your admin email and password.</p>
       <form onSubmit={handleSubmit}>
         <label style={{ display: 'block', marginBottom: 8 }}>Email</label>
         <input
@@ -49,16 +75,17 @@ export default function AdminLogin() {
           required
           style={{ width: '100%', padding: 8, marginBottom: 12 }}
         />
-        <label style={{ display: 'block', marginBottom: 8 }}>Password (optional)</label>
+        <label style={{ display: 'block', marginBottom: 8 }}>Password</label>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Use this to sign in directly"
+          placeholder="Enter your password"
+          required
           style={{ width: '100%', padding: 8, marginBottom: 12 }}
         />
         <button disabled={loading} style={{ padding: '8px 16px' }}>
-          {loading ? 'Sending…' : 'Send Magic Link'}
+          {loading ? 'Signing in…' : 'Sign In'}
         </button>
       </form>
       {message && <p style={{ marginTop: 12 }}>{message}</p>}

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://education-consultancy-iota.vercel.app/</loc>
+    <priority>1.00</priority>
+  </url>
+  <url>
+    <loc>https://education-consultancy-iota.vercel.app/apply</loc>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://education-consultancy-iota.vercel.app/privacy</loc>
+    <priority>0.64</priority>
+  </url>
+  <url>
+    <loc>https://education-consultancy-iota.vercel.app/terms</loc>
+    <priority>0.64</priority>
+  </url>
+  <url>
+    <loc>https://education-consultancy-iota.vercel.app/admin</loc>
+    <priority>0.30</priority>
+  </url>
+</urlset>

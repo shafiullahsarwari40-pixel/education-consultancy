@@ -21,6 +21,15 @@ export default function AdminDashboard() {
       const { data } = await supabase.auth.getSession();
       const s = data?.session ?? null;
       if (!s) return router.push('/admin/login');
+      
+      // Verify user has admin role
+      const verifyRes = await fetch('/api/admin/applications', { headers: { Authorization: `Bearer ${s.access_token}` } });
+      if (verifyRes.status === 403) {
+        await supabase.auth.signOut();
+        setError('Access denied: You do not have admin permissions.');
+        return router.push('/admin/login');
+      }
+      
       setSession(s);
       await Promise.all([
         fetchApps(s.access_token, search, sort),
@@ -34,6 +43,11 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('/api/admin/contact-messages', { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          await supabase.auth.signOut();
+          router.replace('/admin/login');
+          return;
+        }
         const body = await res.json().catch(() => ({ error: 'Unable to fetch contact messages' }));
         throw new Error(body.error || 'Unable to fetch contact messages');
       }
@@ -52,6 +66,11 @@ export default function AdminDashboard() {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) {
       setLoading(false);
+      if (res.status === 401 || res.status === 403) {
+        await supabase.auth.signOut();
+        router.replace('/admin/login');
+        return;
+      }
       const err = await res.json().catch(() => ({ error: 'Unknown error' }));
       console.error('Fetch error', err);
       setError(err.error || err.message || 'Failed to fetch applications');
@@ -103,7 +122,6 @@ export default function AdminDashboard() {
             <div style={{ padding: 12, border: '1px solid #ddd' }}>Total: {stats.total}</div>
             <div style={{ padding: 12, border: '1px solid #ddd' }}>New: {stats.new}</div>
             <div style={{ padding: 12, border: '1px solid #ddd' }}>Accepted: {stats.accepted}</div>
-            <div style={{ padding: 12, border: '1px solid #ddd' }}>Rejected: {stats.rejected}</div>
             <div style={{ padding: 12, border: '1px solid #ddd' }}>This month: {stats.this_month}</div>
           </div>
         ) : (
@@ -148,7 +166,7 @@ export default function AdminDashboard() {
                   </td>
                   <td style={{ padding: 8 }}>{a.email}</td>
                   <td style={{ padding: 8 }}>{a.program}</td>
-                  <td style={{ padding: 8 }}>{a.status || 'New'}</td>
+                  <td style={{ padding: 8 }}>{a.application_status || 'submitted'}</td>
                   <td style={{ padding: 8 }}>{new Date(a.created_at).toLocaleString()}</td>
                 </tr>
               ))}

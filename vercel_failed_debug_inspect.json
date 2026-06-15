@@ -1,0 +1,28 @@
+﻿{
+  "id": "dpl_7w7HE8b9Y2nD8ywNSWPDyNqyTP6B",
+  "name": "education-consultancy",
+  "url": "education-consultancy-ich5vovw2-shafiullah-s-projects1.vercel.app",
+  "target": "production",
+  "readyState": "ERROR",
+  "createdAt": 1781538084728,
+  "aliases": [
+    "education-consultancy-shafiullah-s-projects1.vercel.app",
+    "education-consultancy-git-main-shafiullah-s-projects1.vercel.app"
+  ],
+  "builds": [
+    {
+      "id": "bld_67h4u8ums",
+      "deploymentId": "dpl_7w7HE8b9Y2nD8ywNSWPDyNqyTP6B",
+      "entrypoint": ".",
+      "readyState": "READY",
+      "readyStateAt": 1781538084435,
+      "createdAt": 1781538084435,
+      "createdIn": "sfo1",
+      "use": "@vercel/vc-build",
+      "config": {},
+      "output": [],
+      "fingerprint": null
+    }
+  ],
+  "contextName": "shafiullah-s-projects1"
+}

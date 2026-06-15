@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useLanguage } from '../lib/LanguageContext';
 
 const universities = [
   {
@@ -90,22 +91,24 @@ const universities = [
 ];
 
 export default function Universities() {
+  const { t } = useLanguage();
+
   return (
     <section className="section" id="universities">
       <div className="container">
         <div className="section-header">
-          <span className="section-label">Featured Partner Universities</span>
-          <h2>Premium Turkish University Placement Partners</h2>
-          <p>Study abroad with trusted Turkish universities offering English-friendly programs, modern campuses, and strong international support.</p>
+          <span className="section-label">{t('universities.label')}</span>
+          <h2>{t('universities.title')}</h2>
+          <p>{t('universities.description')}</p>
         </div>
 
         <div className="universities-grid">
-          {universities.map((uni) => (
-            <article key={uni.slug} className="university-card">
+          {universities.map((uni, idx) => (
+            <article key={uni.name || idx} className="university-card">
               <div className="university-logo">
                 <Image
                   src={uni.logo}
-                  alt={`${uni.name} logo`}
+                  alt={`${t('universities.logoAltPrefix')} ${uni.name}`}
                   width={280}
                   height={98}
                   priority={false}
@@ -117,10 +120,10 @@ export default function Universities() {
                 <p className="university-meta">{uni.city} · {uni.languages}</p>
                 <div className="university-details">
                   <span>{uni.programs}</span>
-                  <span>Fast admission support</span>
+                  <span>{t('universities.fastSupport')}</span>
                 </div>
                 <a href={`/apply?uni=${encodeURIComponent(uni.name)}`} className="button button-primary button-full-width">
-                  Apply Now
+                  {t('universities.apply')}
                 </a>
               </div>
             </article>

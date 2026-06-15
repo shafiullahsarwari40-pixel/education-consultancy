@@ -7,7 +7,7 @@ const translations = {
     nav_universities: 'Universities',
     nav_programs: 'Programs',
     nav_contact: 'Contact',
-    nav_apply: 'Apply Now',
+    nav_apply: 'Apply',
     hero_eyebrow: 'International Education Consultancy',
     hero_heading: 'Study abroad with expert guidance.',
     hero_text: 'Horizon helps international students apply, get scholarships, secure visas, and start their studies in Turkey and beyond.',
@@ -225,7 +225,7 @@ const translations = {
     footer_services: 'Hizmetler',
     footer_contact: 'İletişim'
   },
-  da: {
+  fa: {
     language_header: 'زبان را انتخاب کنید',
     language_text: 'لطفاً زبان مورد نظر خود را برای ادامه انتخاب کنید.',
     nav_about: 'درباره ما',
@@ -337,6 +337,55 @@ const translations = {
     footer_about: 'درباره ما',
     footer_services: 'خدمات',
     footer_contact: 'تماس'
+  },
+  ar: {
+    language_header: 'اختر لغتك',
+    language_text: 'الرجاء اختيار لغتك المفضلة للمتابعة.',
+    nav_about: 'من نحن',
+    nav_services: 'الخدمات',
+    nav_universities: 'الجامعات',
+    nav_programs: 'البرامج',
+    nav_contact: 'تواصل',
+    nav_apply: 'قدم الآن',
+    contact_email: 'horizon@horizon-edu.net',
+    footer_text: '© 2026 Horizon Education Consultancy. All rights reserved.'
+  },
+  fr: {
+    language_header: 'Choisissez votre langue',
+    language_text: "Veuillez sélectionner votre langue préférée pour continuer.",
+    nav_about: 'À propos',
+    nav_services: 'Services',
+    nav_universities: 'Universités',
+    nav_programs: 'Programmes',
+    nav_contact: 'Contact',
+    nav_apply: 'Postuler',
+    contact_email: 'horizon@horizon-edu.net',
+    footer_text: '© 2026 Horizon Education Consultancy. All rights reserved.'
+  }
+  ,
+  ur: {
+    language_header: 'اپنی زبان منتخب کریں',
+    language_text: 'براہ کرم جاری رکھنے کے لیے اپنی پسندیدہ زبان منتخب کریں۔',
+    nav_about: 'ہمارے بارے میں',
+    nav_services: 'خدمات',
+    nav_universities: 'جامعات',
+    nav_programs: 'پروگرام',
+    nav_contact: 'رابطہ',
+    nav_apply: 'درخواست دیں',
+    contact_email: 'horizon@horizon-edu.net',
+    footer_text: '© 2026 Horizon Education Consultancy. All rights reserved.'
+  },
+  hi: {
+    language_header: 'अपनी भाषा चुनें',
+    language_text: 'कृपया जारी रखने के लिए अपनी पसंदीदा भाषा चुनें।',
+    nav_about: 'हमारे बारे में',
+    nav_services: 'सेवाएँ',
+    nav_universities: 'विश्वविद्यालय',
+    nav_programs: 'प्रोग्राम',
+    nav_contact: 'संपर्क',
+    nav_apply: 'आवेदन करें',
+    contact_email: 'horizon@horizon-edu.net',
+    footer_text: '© 2026 Horizon Education Consultancy. All rights reserved.'
   }
 };
 
@@ -363,7 +412,12 @@ document.addEventListener('DOMContentLoaded', function () {
       button.classList.toggle('active', button.dataset.lang === lang);
     });
 
-    localStorage.setItem('horizonLanguage', lang);
+    try {
+      localStorage.setItem('appLanguage', lang);
+      localStorage.setItem('horizonLanguage', lang);
+    } catch (e) {
+      // ignore storage errors
+    }
   }
 
   function openModal() {
@@ -410,7 +464,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  const savedLanguage = localStorage.getItem('horizonLanguage');
+  const savedLanguage = localStorage.getItem('appLanguage') || localStorage.getItem('horizonLanguage');
   if (savedLanguage) {
     translatePage(savedLanguage);
     closeModal();

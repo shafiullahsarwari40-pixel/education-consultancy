@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
@@ -70,8 +71,8 @@ export default function ApplicationForm() {
   const [showProgramDropdown, setShowProgramDropdown] = useState(false);
   const [showFacultyDropdown, setShowFacultyDropdown] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [recaptchaToken, setRecaptchaToken] = useState('');
-  const [recaptchaVerified, setRecaptchaVerified] = useState(false);
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [fileSizeError, setFileSizeError] = useState('');
   const [formState, setFormState] = useState({
     full_name: '',
@@ -92,8 +93,6 @@ export default function ApplicationForm() {
     id_card: null,
     photo: null,
   });
-  const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ''; // set in .env.local and Vercel
-  const recaptchaEnabled = Boolean(RECAPTCHA_SITE_KEY);
   const MAX_FILE_SIZE_BYTES = 12 * 1024 * 1024;
   const MAX_TOTAL_UPLOAD_BYTES = 30 * 1024 * 1024;
 
@@ -180,28 +179,29 @@ export default function ApplicationForm() {
   }, []);
 
   useEffect(() => {
-    const renderRecaptcha = () => {
-      const el = document.getElementById('recaptcha-widget');
-      if (!el) return;
-
-      if (!recaptchaEnabled) {
-        setRecaptchaVerified(true);
+    (async () => {
+      if (!supabase) {
+        setAuthLoading(false);
         return;
       }
+      const { data } = await supabase.auth.getSession();
+      setSession(data?.session ?? null);
+      setAuthLoading(false);
+    })();
+  }, []);
 
-      if (window.grecaptcha && window.grecaptcha.render && !el.dataset.rendered) {
-        window.grecaptcha.render(el, {
-          sitekey: RECAPTCHA_SITE_KEY,
-          callback: handleRecaptchaChange,
-        });
-        el.dataset.rendered = 'true';
-      } else if (!window.grecaptcha) {
-        setTimeout(renderRecaptcha, 300);
-      }
-    };
+  useEffect(() => {
+    if (session?.user?.email) {
+      setFormState((prev) => ({
+        ...prev,
+        email: prev.email || session.user.email,
+      }));
+    }
+  }, [session]);
 
-    renderRecaptcha();
-  }, [recaptchaEnabled]);
+  useEffect(() => {
+    // No reCAPTCHA required for application submission.
+  }, []);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -238,16 +238,8 @@ export default function ApplicationForm() {
     setTimeout(() => setShowFacultyDropdown(false), 200);
   }
 
-  function handleRecaptchaChange(token) {
-    setRecaptchaToken(token || '');
-    setRecaptchaVerified(Boolean(token));
-  }
-
   function handleCloseSuccessModal() {
     setShowSuccessModal(false);
-    if (window.grecaptcha && typeof window.grecaptcha.reset === 'function') {
-      window.grecaptcha.reset();
-    }
     setFormState({
       full_name: '',
       email: '',
@@ -257,6 +249,7 @@ export default function ApplicationForm() {
       address: '',
       country: '',
       program: '',
+      faculty: '',
       university: (() => {
         const raw = new URLSearchParams(window.location.search).get('uni') || '';
         try {
@@ -307,6 +300,11 @@ export default function ApplicationForm() {
     setErrorMessage('');
     setSuccessMessage('');
 
+    if (!session) {
+      setErrorMessage('Please sign in before submitting your application.');
+      return;
+    }
+
     const getErrorMessage = (error) => {
       if (!error) return 'Unknown error';
       if (typeof error === 'string') return error;
@@ -315,11 +313,6 @@ export default function ApplicationForm() {
       }
       return String(error);
     };
-
-    if (recaptchaEnabled && !recaptchaVerified) {
-      setErrorMessage('Please verify that you are not a robot.');
-      return;
-    }
 
     const { full_name, email, phone, mother_name, father_name, address, country, program, university, message, passport, transcript, diploma, exam_sheet, id_card, photo } = formState;
     if (!full_name || !email || !phone) {
@@ -363,12 +356,11 @@ export default function ApplicationForm() {
         }
       }
 
-      if (recaptchaEnabled && recaptchaToken) {
-        formData.append('recaptchaToken', recaptchaToken);
-      }
-
       const res = await fetch('/api/submit', {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
         body: formData,
       });
 
@@ -390,11 +382,6 @@ export default function ApplicationForm() {
 
       setSuccessMessage(t('form.success'));
       setShowSuccessModal(true);
-      setRecaptchaVerified(false);
-      setRecaptchaToken('');
-      if (window.grecaptcha && typeof window.grecaptcha.reset === 'function') {
-        window.grecaptcha.reset();
-      }
       setFormState({
         full_name: '',
         email: '',
@@ -415,7 +402,8 @@ export default function ApplicationForm() {
         photo: null,
       });
       event.target.reset();
-      router.refresh();
+      router.push('/student/dashboard');
+      return;
     } catch (error) {
       console.error('Application submit error:', error);
       const errorMessageText =
@@ -429,8 +417,35 @@ export default function ApplicationForm() {
     }
   }
 
+  if (authLoading) {
+    return <div>Loading authentication status…</div>;
+  }
+
+  if (!session) {
+    return (
+      <div className="application-login-prompt" style={{ padding: '2rem', border: '1px solid #ddd', borderRadius: '1rem', background: '#fafafa' }}>
+        <h2>Student login required</h2>
+        <p>Please sign in or create an account to submit your application and track its status.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: 360 }}>
+          <Link href="/student/login" className="button button-primary button-large">
+            Student Login
+          </Link>
+          <Link href="/student/signup" className="button button-secondary button-large">
+            Create Student Account
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
+      <div style={{ marginBottom: '1rem', padding: '1rem', background: '#f5f8ff', borderRadius: '0.75rem' }}>
+        <p style={{ margin: 0 }}>Signed in as <strong>{session.user.email}</strong></p>
+        <p style={{ margin: '0.5rem 0 0 0' }}>
+          After submission, you can track your application from <Link href="/student/dashboard">your student dashboard</Link>.
+        </p>
+      </div>
       <form className="form-grid application-form" onSubmit={handleSubmit}>
         <input type="hidden" name="university" value={formState.university} />
 
@@ -686,10 +701,6 @@ export default function ApplicationForm() {
           </div>
         </div>
 
-        <div className="full-row">
-          <div id="recaptcha-widget" style={{ marginBottom: '1rem' }} />
-        </div>
-
         {errorMessage && (
           <div style={{
             gridColumn: '1 / -1',
@@ -719,7 +730,7 @@ export default function ApplicationForm() {
           <button
             type="submit"
             className="button button-primary button-large button-full-width"
-            disabled={loading || !recaptchaVerified || Boolean(fileSizeError)}
+            disabled={loading || Boolean(fileSizeError)}
           >
             {loading ? t('form.submitting') : t('form.submit')}
           </button>
@@ -760,12 +771,12 @@ export default function ApplicationForm() {
 
             <div style={{ background: 'var(--bg-light)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}>
               <p style={{ margin: '0.5rem 0' }}>
-                Your application and supporting documents have been received successfully. Our admissions team will review your submission and contact you soon.
+                {t('form.afterSubmitInfo')}
               </p>
             </div>
 
             <div style={{ marginBottom: '1rem', textAlign: 'left' }}>
-              <p style={{ fontWeight: '600', marginBottom: '0.5rem' }}>📧 Email</p>
+              <p style={{ fontWeight: '600', marginBottom: '0.5rem' }}>📧 {t('form.emailLabel')}</p>
               <a
                 href="mailto:horizon@horizon-edu.net?subject=Education%20Consultation%20Request"
                 style={{ color: 'var(--secondary)' }}
@@ -775,7 +786,7 @@ export default function ApplicationForm() {
             </div>
 
             <div style={{ marginBottom: '1rem', textAlign: 'left' }}>
-              <p style={{ fontWeight: '600', marginBottom: '0.5rem' }}>💬 WhatsApp / Phone</p>
+              <p style={{ fontWeight: '600', marginBottom: '0.5rem' }}>💬 {t('form.phone')}</p>
               <a
                 href="https://api.whatsapp.com/send?phone=905515227371&text=Hello%20Horizon%20Team"
                 target="_blank"
@@ -784,19 +795,41 @@ export default function ApplicationForm() {
               >
                 +90 (551) 522-7371
               </a>
+              <div style={{ marginTop: '0.5rem' }}>
+                <a
+                  href="https://t.me/horizonedu"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: 'var(--secondary)' }}
+                >
+                  {t('form.telegramLinkText')}
+                </a>
+              </div>
             </div>
 
             <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-              Please check your email regularly for updates.
+              {t('form.emailNote')}
             </p>
 
-            <button
-              onClick={handleCloseSuccessModal}
-              className="button button-primary button-large"
-              style={{ width: '100%' }}
-            >
-              {t('form.close') || 'Close'}
-            </button>
+            <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  router.push('/student/result');
+                }}
+                className="button button-primary button-large"
+                style={{ width: '100%' }}
+              >
+                {t('nav.seeResult')}
+              </button>
+              <button
+                onClick={handleCloseSuccessModal}
+                className="button button-secondary button-large"
+                style={{ width: '100%' }}
+              >
+                {t('form.close') || 'Close'}
+              </button>
+            </div>
           </div>
         </div>
       )}

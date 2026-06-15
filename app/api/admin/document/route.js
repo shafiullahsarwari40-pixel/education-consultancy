@@ -10,9 +10,14 @@ async function requireAdmin(request) {
   if (userErr || !userData?.user) return { ok: false, status: 401, body: { error: 'Invalid auth token' } };
 
   const user = userData.user;
-  const { data: admins, error: adminErr } = await supabaseAdmin.from('admins').select('email').ilike('email', user.email).limit(1);
-  if (adminErr) return { ok: false, status: 500, body: { error: 'Admin lookup failed' } };
-  if (!admins || admins.length === 0) return { ok: false, status: 403, body: { error: `Forbidden: admin only (no admin record for ${user.email})` } };
+  const { data: profile, error: profileErr } = await supabaseAdmin
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profileErr) return { ok: false, status: 500, body: { error: 'Admin lookup failed' } };
+  if (!profile || profile.role !== 'admin') return { ok: false, status: 403, body: { error: `Forbidden: admin only (no admin role for ${user.email})` } };
 
   return { ok: true, user };
 }

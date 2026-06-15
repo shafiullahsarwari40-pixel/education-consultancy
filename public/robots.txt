@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://education-consultancy-iota.vercel.app/sitemap.xml

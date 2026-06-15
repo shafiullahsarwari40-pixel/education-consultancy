@@ -12,6 +12,12 @@ export default function ApplicationDetailClient({ id }) {
   const [documents, setDocuments] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusUpdating, setStatusUpdating] = useState(false);
+  const [savingResult, setSavingResult] = useState(false);
+  const [uploadingLetter, setUploadingLetter] = useState(false);
+  const [letterUploadError, setLetterUploadError] = useState('');
+  const [letterUploadSuccess, setLetterUploadSuccess] = useState('');
+  const [adminNote, setAdminNote] = useState('');
+  const [letterFile, setLetterFile] = useState(null);
 
   useEffect(() => {
     if (!supabase) {
@@ -33,6 +39,16 @@ export default function ApplicationDetailClient({ id }) {
         router.push('/admin/login');
         return;
       }
+      
+      // Verify user has admin role
+      const verifyRes = await fetch('/api/admin/applications', { headers: { Authorization: `Bearer ${s.access_token}` } });
+      if (verifyRes.status === 403) {
+        await supabase.auth.signOut();
+        setErrorMsg('Access denied: You do not have admin permissions.');
+        router.push('/admin/login');
+        return;
+      }
+      
       setSession(s);
       setErrorMsg(null);
       await fetchDetail(s.access_token);
@@ -44,6 +60,11 @@ export default function ApplicationDetailClient({ id }) {
     try {
       const res = await fetch(`/api/admin/applications/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          await supabase.auth.signOut();
+          router.replace('/admin/login');
+          return;
+        }
         const body = await res.json().catch(() => ({ error: 'Unknown error' }));
         const msg = body?.error || `Request failed (${res.status})`;
         console.error('Failed to fetch application detail', msg);
@@ -74,6 +95,11 @@ export default function ApplicationDetailClient({ id }) {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          await supabase.auth.signOut();
+          router.replace('/admin/login');
+          return;
+        }
         const err = await res.json();
         console.error('Document fetch failed', err);
         alert(err.error || 'Failed to open document');
@@ -102,9 +128,75 @@ export default function ApplicationDetailClient({ id }) {
       const body = await res.json();
       setApplication(body.application);
     } else {
+      if (res.status === 401 || res.status === 403) {
+        await supabase.auth.signOut();
+        router.replace('/admin/login');
+        return;
+      }
       const err = await res.json();
       console.error('Status update failed', err);
     }
+  }
+
+  async function uploadAcceptanceLetter() {
+    if (!session) return;
+    setLetterUploadError('');
+    setLetterUploadSuccess('');
+
+    if (!letterFile) {
+      setLetterUploadError('Please select a PDF file to upload.');
+      return;
+    }
+
+    if (!letterFile.type.includes('pdf')) {
+      setLetterUploadError('Only PDF files are allowed for acceptance letters.');
+      return;
+    }
+
+    if (letterFile.size > 10 * 1024 * 1024) {
+      setLetterUploadError('The acceptance letter file must be smaller than 10MB.');
+      return;
+    }
+
+    setUploadingLetter(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', letterFile);
+      formData.append('status', 'accepted');
+      formData.append('admin_note', adminNote || '');
+
+      const res = await fetch(`/api/admin/applications/${id}/letter`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: formData,
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          await supabase.auth.signOut();
+          router.replace('/admin/login');
+          return;
+        }
+        throw new Error(result?.error || 'Failed to upload acceptance letter.');
+      }
+
+      setApplication(result.application || application);
+      setLetterUploadSuccess('Acceptance letter uploaded successfully.');
+      setLetterFile(null);
+    } catch (err) {
+      console.error('Letter upload failed', err);
+      setLetterUploadError(err?.message || 'Upload failed.');
+    } finally {
+      setUploadingLetter(false);
+    }
+  }
+
+  function handleLetterFileChange(event) {
+    setLetterUploadError('');
+    setLetterUploadSuccess('');
+    const file = event.target.files?.[0] || null;
+    setLetterFile(file);
   }
 
   if (loading) return <p style={{ padding: 24 }}>Loading…</p>;
@@ -149,17 +241,67 @@ export default function ApplicationDetailClient({ id }) {
         <label>
           <strong>Status:</strong>
         </label>
-        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          {['New', 'Contacted', 'Under Review', 'Accepted', 'Rejected'].map((s) => (
+        <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+          {['submitted', 'evaluating', 'accepted', 'rejected'].map((s) => (
             <button
               key={s}
               onClick={() => updateStatus(s)}
-              disabled={statusUpdating || application.status === s}
-              style={{ padding: '6px 10px', background: application.status === s ? '#0070f3' : '#eee', color: application.status === s ? '#fff' : '#000' }}
+              disabled={statusUpdating || application.application_status === s}
+              style={{ padding: '6px 10px', background: application.application_status === s ? '#0070f3' : '#eee', color: application.application_status === s ? '#fff' : '#000' }}
             >
-              {s}
+              {s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
           ))}
+        </div>
+      </section>
+
+      <section style={{ marginTop: 20, padding: '1rem', borderRadius: 14, background: '#f9fbff', border: '1px solid #e3e9f6' }}>
+        <h3>Acceptance Letter</h3>
+        {application.acceptance_letter_url ? (
+          <div style={{ marginBottom: 12 }}>
+            <p style={{ margin: 0 }}>An acceptance letter has already been uploaded for this application.</p>
+            <button
+              type="button"
+              onClick={() => window.open(application.acceptance_letter_url, '_blank')}
+              className="button button-secondary"
+              style={{ marginTop: 10 }}
+            >
+              Open Acceptance Letter
+            </button>
+          </div>
+        ) : (
+          <p style={{ marginBottom: 12 }}>Upload the student&apos;s acceptance letter PDF here to make it available for download.</p>
+        )}
+
+        <div style={{ display: 'grid', gap: '0.75rem', maxWidth: 520 }}>
+          <label style={{ display: 'grid', gap: '0.5rem' }}>
+            <span style={{ fontWeight: 600 }}>Upload PDF</span>
+            <input type="file" accept="application/pdf" onChange={handleLetterFileChange} />
+          </label>
+
+          <label style={{ display: 'grid', gap: '0.5rem' }}>
+            <span style={{ fontWeight: 600 }}>Admin Note (optional)</span>
+            <textarea
+              rows={3}
+              value={adminNote}
+              onChange={(event) => setAdminNote(event.target.value)}
+              style={{ width: '100%', padding: '0.75rem', borderRadius: 10, border: '1px solid #d6dde8' }}
+              placeholder="Add an optional note that will be saved with the update."
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={uploadAcceptanceLetter}
+            disabled={uploadingLetter || !letterFile}
+            className="button button-primary"
+            style={{ width: 'fit-content' }}
+          >
+            {uploadingLetter ? 'Uploading…' : 'Upload Acceptance Letter'}
+          </button>
+
+          {letterUploadError && <p style={{ margin: 0, color: '#d32f2f' }}>{letterUploadError}</p>}
+          {letterUploadSuccess && <p style={{ margin: 0, color: '#2e7d32' }}>{letterUploadSuccess}</p>}
         </div>
       </section>
 

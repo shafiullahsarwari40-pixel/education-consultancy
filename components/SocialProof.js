@@ -1,20 +1,23 @@
 'use client';
 
+import { useLanguage } from '../lib/LanguageContext';
+
 export default function SocialProof() {
+  const { t } = useLanguage();
   const points = [
-    'Trusted Guidance',
-    'Clear Communication',
-    'Application Support',
-    'Student Success Focus'
+    t('socialProof.point1'),
+    t('socialProof.point2'),
+    t('socialProof.point3'),
+    t('socialProof.point4')
   ];
 
   return (
     <section className="section social-proof">
       <div className="container">
         <div className="section-header">
-          <span className="section-label">Trust Builders</span>
-          <h2>What Students Count On</h2>
-          <p>Horizon is committed to reliable support, clear communication and successful admissions.</p>
+          <span className="section-label">{t('socialProof.label')}</span>
+          <h2>{t('socialProof.title')}</h2>
+          <p>{t('socialProof.description')}</p>
         </div>
 
         <div className="proof-grid">

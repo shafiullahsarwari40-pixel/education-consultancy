@@ -1,26 +1,29 @@
 'use client';
 
+import { useLanguage } from '../lib/LanguageContext';
+
 export default function FAQSection() {
+  const { t } = useLanguage();
   const faqs = [
     {
-      question: 'Do I need YÖS?',
-      answer: 'Most programs do not require YÖS for international students. We help you identify the right universities and entry paths.'
+      question: t('faq.question1'),
+      answer: t('faq.answer1')
     },
     {
-      question: 'Can I apply with only a diploma?',
-      answer: 'Yes, you can apply with a high school diploma and transcript. We also support document evaluation and authentication.'
+      question: t('faq.question2'),
+      answer: t('faq.answer2')
     },
     {
-      question: 'How long does admission take?',
-      answer: 'Admission timing depends on the program and university, but most applications are reviewed within 4–8 weeks.'
+      question: t('faq.question3'),
+      answer: t('faq.answer3')
     },
     {
-      question: 'Can I study in English?',
-      answer: 'Many Turkish universities offer English-taught programs. We help you find the best fit and prepare your application.'
+      question: t('faq.question4'),
+      answer: t('faq.answer4')
     },
     {
-      question: 'Do you help with visas?',
-      answer: 'Yes, we provide visa guidance, document preparation, and support throughout the residence permit process.'
+      question: t('faq.question5'),
+      answer: t('faq.answer5')
     }
   ];
 
@@ -28,9 +31,9 @@ export default function FAQSection() {
     <section className="section faq-section" id="faq">
       <div className="container">
         <div className="section-header">
-          <span className="section-label">FAQs</span>
-          <h2>Frequently Asked Questions</h2>
-          <p>Answers to the most common student questions about studying in Turkey.</p>
+          <span className="section-label">{t('faq.label')}</span>
+          <h2>{t('faq.title')}</h2>
+          <p>{t('faq.description')}</p>
         </div>
 
         <div className="faq-grid">
