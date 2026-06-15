@@ -2893,9 +2893,10 @@ footer a:hover {
 
 /* Floating Language Changer */
 .floating-language-changer {
+  /* Float the language changer above the message button in the same column */
   position: fixed;
-  top: 95px;
-  right: 2rem;
+  right: var(--spacing-lg);
+  bottom: calc(var(--spacing-lg) + 84px);
   z-index: 9999;
 }
 
@@ -2968,8 +2969,9 @@ footer a:hover {
 
 @media (max-width: 768px) {
   .floating-language-changer {
-    bottom: 20px;
-    right: 20px;
+    /* On small screens keep it above the floating message button */
+    bottom: calc(var(--spacing-lg) + 72px);
+    right: var(--spacing-lg);
   }
   
   .floating-lang-btn {
