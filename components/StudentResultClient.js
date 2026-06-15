@@ -304,13 +304,31 @@ export default function StudentResultClient() {
           }}>
             <h3 style={{ marginTop: 0 }}>Acceptance Letter</h3>
             {hasAcceptanceLetter ? (
-              <a
-                href="/api/student/acceptance-letter"
+              <button
+                onClick={() => {
+                  fetch('/api/student/acceptance-letter', {
+                    headers: { Authorization: `Bearer ${session?.access_token}` },
+                  })
+                    .then(res => {
+                      if (!res.ok) throw new Error('Download failed');
+                      return res.blob();
+                    })
+                    .then(blob => {
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'acceptance-letter.pdf';
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                    })
+                    .catch(err => alert(`Error: ${err.message}`));
+                }}
                 className="button button-primary"
-                style={{ display: 'inline-block' }}
               >
                 ↓ Download Acceptance Letter
-              </a>
+              </button>
             ) : (
               <p style={{ margin: 0, color: '#666' }}>
                 Your acceptance letter will be available for download shortly. Please check back soon.
