@@ -85,6 +85,13 @@ export default function ApplicationDetailClient({ id }) {
 
   async function openDocument(docUrl) {
     if (!session) return;
+
+    const newWindow = window.open('about:blank');
+    if (!newWindow) {
+      alert('Please allow popups for this site to download documents.');
+      return;
+    }
+
     try {
       const targetUrl = docUrl.startsWith('/api/admin/document')
         ? docUrl
@@ -101,15 +108,18 @@ export default function ApplicationDetailClient({ id }) {
         }
         const err = await res.json().catch(() => ({ error: 'Unknown error' }));
         console.error('Document fetch failed', err);
+        newWindow.close();
         alert(err.error || 'Failed to open document');
         return;
       }
+
       const contentType = res.headers.get('content-type') || 'application/octet-stream';
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(new Blob([blob], { type: contentType }));
-      window.open(objectUrl, '_blank');
+      newWindow.location.href = objectUrl;
     } catch (err) {
       console.error('Open document error', err);
+      newWindow.close();
       alert('Unable to open document.');
     }
   }
@@ -317,8 +327,8 @@ export default function ApplicationDetailClient({ id }) {
               { key: 'exam_sheet_url', label: 'Exam Sheet' },
             ].map(({ key, label }) => {
               const val = documents[key];
-              if (!val || !val.startsWith('http')) return null;
-              const filename = val.split('/').pop();
+              if (!val || typeof val !== 'string' || !(val.startsWith('http') || val.startsWith('/api/admin/document'))) return null;
+              const filename = val.split('?')[0].split('/').pop();
               return (
                 <li key={key} style={{ marginBottom: 10 }}>
                   <div>
