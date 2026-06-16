@@ -150,7 +150,7 @@ section,
 @media (max-width: 991px) {
   .navbar-inner { height: 72px; }
   .navbar { backdrop-filter: blur(4px); }
-  .next-section-btn { right: 12px; bottom: 12px; padding: 0.45rem 0.8rem; }
+  .next-section-btn { left: 12px; bottom: 12px; padding: 0.45rem 0.8rem; }
 }
 
 section.in-view,
@@ -433,7 +433,7 @@ p {
 
 .next-section-btn {
   position: fixed;
-  right: 18px;
+  left: 18px;
   bottom: 22px;
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
   color: white;
@@ -3071,7 +3071,7 @@ footer a:hover {
   background: rgba(0, 0, 0, 0.35);
   display: flex;
   justify-content: flex-end;
-  z-index: 200;
+  z-index: 4200;
   animation: fadeInBackdrop 0.25s ease;
 }
 
