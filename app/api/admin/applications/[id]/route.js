@@ -75,7 +75,27 @@ export async function GET(request, { params }) {
   const { data: docs } = await supabaseAdmin.from('application_documents').select('*').eq('application_id', id).limit(1);
   const documentRecord = docs?.[0] || null;
 
-  return NextResponse.json({ application: applicationWithUrl, documents: documentRecord });
+  // Convert storage paths to admin download endpoints if documents are stored in Supabase storage.
+  const convertedDocuments = documentRecord
+    ? Object.fromEntries(
+        Object.entries(documentRecord).map(([key, value]) => {
+          if (typeof value === 'string' && value.startsWith('http')) {
+            try {
+              const storageInfo = parseStoragePath(value);
+              if (storageInfo) {
+                const downloadUrl = `/api/admin/document?publicUrl=${encodeURIComponent(value)}`;
+                return [key, downloadUrl];
+              }
+            } catch {
+              // fallback to original URL
+            }
+          }
+          return [key, value];
+        })
+      )
+    : null;
+
+  return NextResponse.json({ application: applicationWithUrl, documents: convertedDocuments });
 }
 
 export async function PATCH(request, { params }) {

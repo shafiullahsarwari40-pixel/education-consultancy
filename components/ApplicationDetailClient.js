@@ -86,12 +86,11 @@ export default function ApplicationDetailClient({ id }) {
   async function openDocument(docUrl) {
     if (!session) return;
     try {
-      if (docUrl.startsWith('/api/admin/document')) {
-        window.open(docUrl, '_blank');
-        return;
-      }
+      const targetUrl = docUrl.startsWith('/api/admin/document')
+        ? docUrl
+        : `/api/admin/document?publicUrl=${encodeURIComponent(docUrl)}`;
 
-      const res = await fetch(`/api/admin/document?publicUrl=${encodeURIComponent(docUrl)}`, {
+      const res = await fetch(targetUrl, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (!res.ok) {
@@ -100,7 +99,7 @@ export default function ApplicationDetailClient({ id }) {
           router.replace('/admin/login');
           return;
         }
-        const err = await res.json();
+        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
         console.error('Document fetch failed', err);
         alert(err.error || 'Failed to open document');
         return;

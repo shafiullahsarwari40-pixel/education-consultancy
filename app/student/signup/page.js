@@ -50,7 +50,13 @@ export default function StudentSignupPage() {
       );
 
       if (error) {
-        setMessage(error.message);
+        const rawMessage = error.message || '';
+        const isRateLimit = /rate limit|rate limit exceeded|too many requests|email rate limit/i.test(rawMessage);
+        if (isRateLimit) {
+          setMessage('A lot of new users tried to verify. Please try again 1 hour later.');
+        } else {
+          setMessage(rawMessage);
+        }
         setLoading(false);
         return;
       }
