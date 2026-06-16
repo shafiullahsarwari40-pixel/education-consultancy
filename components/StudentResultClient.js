@@ -308,6 +308,11 @@ export default function StudentResultClient() {
             {hasAcceptanceLetter ? (
               <button
                 onClick={() => {
+                  if (application.acceptance_letter_url) {
+                    window.open(application.acceptance_letter_url, '_blank');
+                    return;
+                  }
+
                   fetch('/api/student/acceptance-letter', {
                     headers: { Authorization: `Bearer ${session?.access_token}` },
                   })
