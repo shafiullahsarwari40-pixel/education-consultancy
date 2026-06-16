@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useLanguage } from '../lib/LanguageContext';
+import { localizeDigits } from '../lib/numberFormat';
 
 export default function Contact() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [formState, setFormState] = useState({
     name: '',
     email: '',
@@ -69,7 +70,7 @@ export default function Contact() {
 
             <div style={{ marginBottom: '2rem' }}>
               <h4 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>📞 {t('contact.phone')}</h4>
-              <p style={{ margin: 0 }}>+90 (551) 522-7371</p>
+              <p style={{ margin: 0 }}>{localizeDigits('+90 (551) 522-7371', language)}</p>
             </div>
 
             <div style={{ marginBottom: '2rem' }}>
@@ -84,7 +85,7 @@ export default function Contact() {
             <div>
               <h4 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>💬 {t('contact.whatsappLabel')}</h4>
               <a
-                href="https://api.whatsapp.com/send?phone=905515227371&text=Hello%20Horizon%20Team"
+                href={`https://api.whatsapp.com/send?phone=905515227371&text=${encodeURIComponent(localizeDigits('Hello Horizon Team', useLanguage().language))}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="button button-primary"
