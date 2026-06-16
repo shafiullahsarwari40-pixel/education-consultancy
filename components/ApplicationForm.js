@@ -88,7 +88,7 @@ export default function ApplicationForm() {
     id_card: null,
     photo: null,
   });
-  const MAX_FILE_SIZE_BYTES = 12 * 1024 * 1024;
+  const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
   const MAX_TOTAL_UPLOAD_BYTES = 30 * 1024 * 1024;
 
   const formatBytes = (bytes) => {
