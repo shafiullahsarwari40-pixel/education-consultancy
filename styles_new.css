@@ -122,6 +122,51 @@ select:focus {
   padding: 0 var(--spacing-sm);
 }
 
+/* Scroll snapping and section sizing for a modern, controlled scroll UX */
+main {
+  scroll-snap-type: y proximity;
+}
+
+section,
+.section {
+  scroll-snap-align: start;
+  scroll-margin-top: calc(96px + 16px);
+  min-height: 90vh;
+  display: block;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* Ensure section titles aren't hidden under sticky navbar when linking */
+.section .section-header, .section h2, .hero h1 {
+  scroll-margin-top: calc(96px + 24px);
+}
+
+/* small helper for when hero uses darker background */
+.hero .hero-copy { z-index: 3; }
+
+/* reduce navbar height on small screens */
+@media (max-width: 991px) {
+  .navbar-inner { height: 72px; }
+  .navbar { backdrop-filter: blur(4px); }
+  .next-section-btn { right: 12px; bottom: 12px; padding: 0.45rem 0.8rem; }
+}
+
+section.in-view,
+.section.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 991px) {
+  section,
+  .section {
+    min-height: auto;
+    scroll-margin-top: calc(72px + 12px);
+  }
+}
+
 .section {
   padding: var(--spacing-3xl) 0;
 }
@@ -282,8 +327,9 @@ p {
 .navbar {
   position: sticky;
   top: 0;
-  z-index: 100;
-  background-color: var(--bg);
+  z-index: 1000;
+  background-color: rgba(255,255,255,0.88);
+  backdrop-filter: blur(6px);
   box-shadow: none;
   transition: var(--transition);
 }
@@ -383,6 +429,28 @@ p {
 
 .navbar-menu a.active::after {
   width: 100%;
+}
+
+.next-section-btn {
+  position: fixed;
+  right: 18px;
+  bottom: 22px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  color: white;
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-md);
+  z-index: 1200;
+  opacity: 0.95;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.next-section-btn:hover { transform: translateY(-3px); }
+
+/* Hide floating next button while mobile menu is open to avoid overlap */
+body.mobile-menu-open .next-section-btn {
+  display: none !important;
 }
 
 /* ==================== NAVBAR - STRUCTURE OVERRIDES ==================== */
@@ -634,10 +702,13 @@ p {
 /* Desktop behavior */
 @media (min-width: 992px) {
   .menu-close { display: none; }
-  .navbar-menu.desktop { display: none !important; }
-  .navbar-social { display: none !important; }
-  .button.desktop { display: none !important; }
-  .menu-toggle { display: inline-flex !important; }
+  /* show desktop navigation and hide mobile toggle */
+  .navbar-menu.desktop { display: flex !important; }
+  .navbar-social { display: flex !important; }
+  .button.desktop { display: inline-flex !important; }
+  .menu-toggle { display: none !important; }
+  /* ensure any mobile menu (if rendered) is hidden on desktop */
+  .mobile-menu { display: none !important; }
 }
 
 /* Mobile behavior */
@@ -670,7 +741,7 @@ p {
   background: rgba(0, 0, 0, 0.35);
   display: flex;
   justify-content: flex-end;
-  z-index: 200;
+  z-index: 4200; /* ensure mobile menu overlays floating buttons and next-section */
 }
 
 .mobile-panel {
@@ -681,6 +752,8 @@ p {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  position: relative;
+  z-index: 4300; /* keep panel above overlay and other UI */
 }
 
 .mobile-panel .menu-close {
@@ -693,6 +766,7 @@ p {
   cursor: pointer;
   padding: 0;
   color: var(--primary);
+  z-index: 4350; /* ensure close button is clickable/visible */
   margin-bottom: 0.5rem;
 }
 
@@ -1225,6 +1299,121 @@ p {
   color: white;
   font-weight: var(--font-weight-bold);
 }
+
+/* ==================== DOCUMENT UPLOAD GRID & CARDS ==================== */
+.file-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.file-upload-card {
+  background: linear-gradient(180deg, var(--surface), #fbfdff);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 160px;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  cursor: pointer;
+}
+
+.file-upload-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-hover);
+}
+
+.file-upload-card.selected {
+  border-color: var(--secondary);
+  box-shadow: 0 8px 30px rgba(0,168,232,0.06);
+}
+
+.file-upload-card .card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.file-upload-icon {
+  font-size: 1.6rem;
+  width: 44px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(0,168,232,0.08);
+}
+
+.file-upload-title {
+  font-weight: var(--font-weight-semibold);
+  color: var(--primary);
+}
+
+.card-body {
+  margin-top: 0.75rem;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.file-preview {
+  font-size: 0.95rem;
+  color: var(--text);
+  text-align: center;
+  word-break: break-word;
+}
+
+.file-placeholder {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  background: linear-gradient(180deg, rgba(0,0,0,0.02), transparent);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+}
+
+.card-footer {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 0.75rem;
+}
+
+.upload-btn { padding: 0.5rem 0.9rem; }
+.remove-btn { padding: 0.5rem 0.6rem; }
+
+@media (max-width: 1024px) {
+  .file-upload-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .file-upload-grid { grid-template-columns: 1fr; }
+  .file-upload-card { min-height: 140px; }
+}
+
+/* Improve searchable select visual */
+.searchable-select .search-input {
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  border-radius: var(--radius-md);
+  padding-right: 2.5rem;
+  position: relative;
+}
+
+.searchable-select { position: relative; }
+.searchable-select::after {
+  content: '▾';
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
 
 .privacy-page {
   padding: var(--spacing-3xl) 0;

@@ -1,6 +1,52 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin, supabaseAdminKeyMalformed, isInvalidSupabaseApiKeyError } from '../../../lib/supabaseAdmin';
+import nodemailer from 'nodemailer';
 
+const ADMIN_EMAIL = process.env.CONTACT_NOTIFICATION_EMAIL || 'horizon@horizon-edu.net';
+const EMAIL_HOST = process.env.EMAIL_HOST || '';
+const EMAIL_PORT = Number(process.env.EMAIL_PORT || '587');
+const EMAIL_USER = process.env.EMAIL_USER || '';
+const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD || '';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
+
+async function sendNotificationEmail({ full_name, email, program, university, applicationId }) {
+  if (!EMAIL_HOST || !EMAIL_USER || !EMAIL_PASSWORD) {
+    console.warn('Email configuration not set; skipping notification email.');
+    return;
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: EMAIL_HOST,
+    port: EMAIL_PORT,
+    secure: EMAIL_PORT === 465,
+    auth: {
+      user: EMAIL_USER,
+      pass: EMAIL_PASSWORD,
+    },
+  });
+
+  const subject = 'New Student Application';
+  const text = `A new student application has been submitted.\n\nStudent Name: ${full_name}\nEmail: ${email}\nProgram: ${program}\nUniversity: ${university}\nApplication ID: ${applicationId}\n\nView the admin dashboard to review the application.`;
+
+  await transporter.sendMail({
+    from: `${EMAIL_USER}`,
+    to: ADMIN_EMAIL,
+    subject,
+    text,
+  });
+}
+
+async function sendTelegramNotification({ full_name, email, program, university, applicationId }) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+    return;
+  }
+
+  const message = encodeURIComponent(`New Student Application\n\nStudent Name: ${full_name}\nEmail: ${email}\nProgram: ${program}\nUniversity: ${university}\nApplication ID: ${applicationId}`);
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${message}`;
+
+  await fetch(url);
+}
 
 export async function POST(request) {
   if (!supabaseAdmin || supabaseAdminKeyMalformed) {
@@ -28,6 +74,7 @@ export async function POST(request) {
   const program = formData.get('program') || '';
   const university = formData.get('university') || '';
   const message = formData.get('message') || '';
+  const submission_token = formData.get('submission_token') || '';
 
   const auth = request.headers.get('authorization') || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : auth;
@@ -53,10 +100,29 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
+  if (!submission_token) {
+    return NextResponse.json({ error: 'Submission token required' }, { status: 400 });
+  }
+
   try {
+    const { data: existingApplications, error: existingError } = await supabaseAdmin
+      .from('applications')
+      .select('id')
+      .eq('submission_token', submission_token)
+      .limit(1);
+
+    if (existingError) {
+      console.error('Submission token lookup error:', existingError);
+      return NextResponse.json({ error: existingError.message || 'Failed to verify submission token' }, { status: 500 });
+    }
+
+    if (existingApplications && existingApplications.length > 0) {
+      return NextResponse.json({ success: true, applicationId: existingApplications[0].id, duplicate: true });
+    }
+
     const { data: applicationData, error: appError } = await supabaseAdmin
       .from('applications')
-      .insert([{ full_name, email, phone, mother_name, father_name, address, country, program, university, message, user_id, application_status: 'submitted', status_updated_at: new Date().toISOString() }])
+      .insert([{ full_name, email, phone, mother_name, father_name, address, country, program, university, message, user_id, application_status: 'submitted', status_updated_at: new Date().toISOString(), submission_token }])
       .select();
 
     if (appError || !applicationData || applicationData.length === 0) {
@@ -112,6 +178,32 @@ export async function POST(request) {
         console.error('Document insert error:', docError);
         return NextResponse.json({ error: docError.message || 'Failed to save application documents' }, { status: 500 });
       }
+    }
+
+    const notificationPayload = {
+      application_id: applicationId,
+      student_name: full_name,
+      student_email: email,
+      program,
+      university,
+      read: false,
+    };
+
+    const { error: notificationError } = await supabaseAdmin.from('admin_notifications').insert([notificationPayload]);
+    if (notificationError) {
+      console.error('Notification insert error:', notificationError);
+    }
+
+    try {
+      await sendNotificationEmail({ full_name, email, program, university, applicationId });
+    } catch (emailError) {
+      console.error('Application notification email error:', emailError);
+    }
+
+    try {
+      await sendTelegramNotification({ full_name, email, program, university, applicationId });
+    } catch (telegramError) {
+      console.error('Application Telegram notification error:', telegramError);
     }
 
     return NextResponse.json({ success: true, applicationId });

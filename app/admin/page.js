@@ -10,8 +10,11 @@ export default function AdminDashboard() {
   const [session, setSession] = useState(null);
   const [apps, setApps] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [notifLoading, setNotifLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('desc');
@@ -34,9 +37,21 @@ export default function AdminDashboard() {
       await Promise.all([
         fetchApps(s.access_token, search, sort),
         fetchMessages(s.access_token),
+        fetchNotifications(s.access_token),
       ]);
     })();
   }, []);
+
+  useEffect(() => {
+    if (!session) return undefined;
+    const interval = setInterval(() => {
+      fetchNotifications(session.access_token).catch((err) => {
+        console.error('Notification polling error', err);
+      });
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [session]);
 
   async function fetchMessages(token) {
     setError(null);
@@ -83,6 +98,57 @@ export default function AdminDashboard() {
     setLoading(false);
   }
 
+  async function fetchNotifications(token) {
+    setNotifLoading(true);
+    try {
+      const res = await fetch('/api/admin/notifications', { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          await supabase.auth.signOut();
+          router.replace('/admin/login');
+          return;
+        }
+        const body = await res.json().catch(() => ({ error: 'Unable to fetch notifications' }));
+        throw new Error(body.error || 'Unable to fetch notifications');
+      }
+
+      const body = await res.json();
+      setNotifications(body.notifications || []);
+      setUnreadCount((body.notifications || []).filter((n) => !n.read).length);
+    } catch (err) {
+      console.error('Fetch notifications error', err);
+      setError(err.message || 'Failed to load notifications');
+    } finally {
+      setNotifLoading(false);
+    }
+  }
+
+  async function markNotificationRead(id, markRead) {
+    if (!session) return;
+    try {
+      const res = await fetch('/api/admin/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ id, mark_read: markRead }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: 'Unable to update notification' }));
+        throw new Error(body.error || 'Unable to update notification');
+      }
+
+      const result = await res.json();
+      setNotifications((prev) => prev.map((item) => (item.id === result.notification.id ? result.notification : item)));
+      setUnreadCount((prev) => (markRead ? Math.max(0, prev - 1) : prev + 1));
+    } catch (err) {
+      console.error('Mark notification read error', err);
+      setError(err.message || 'Unable to update notification');
+    }
+  }
+
   function handleSearchChange(e) {
     setSearch(e.target.value);
   }
@@ -102,7 +168,17 @@ export default function AdminDashboard() {
   return (
     <div style={{ padding: 24, maxWidth: 1100, margin: '0 auto' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Admin Dashboard</h1>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <h1 style={{ margin: 0 }}>Admin Dashboard</h1>
+          <button
+            type="button"
+            onClick={() => fetchNotifications(session?.access_token)}
+            disabled={!session || notifLoading}
+            style={{ padding: '8px 12px', borderRadius: 999, border: '1px solid #ccc', background: '#fff', cursor: 'pointer' }}
+          >
+            🔔 {unreadCount > 0 ? `${unreadCount} new` : 'No new'}
+          </button>
+        </div>
         <div>
           <Link href="/">Home</Link>
         </div>
@@ -126,6 +202,66 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <p>Loading stats…</p>
+        )}
+      </section>
+
+      <section style={{ marginTop: 20, padding: 16, borderRadius: 14, background: '#f6f8fb', border: '1px solid #dfe4ed' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div>
+            <h2 style={{ margin: 0 }}>Notifications</h2>
+            <p style={{ margin: '4px 0 0', color: '#555' }}>{unreadCount} unread notification{unreadCount === 1 ? '' : 's'}</p>
+          </div>
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              onClick={async () => {
+                await Promise.all(notifications.filter((n) => !n.read).map((n) => markNotificationRead(n.id, true)));
+              }}
+              style={{ padding: '8px 12px', borderRadius: 999, background: '#0070f3', color: '#fff', border: 'none', cursor: 'pointer' }}
+            >
+              Mark all read
+            </button>
+          )}
+        </div>
+        {notifLoading ? (
+          <p>Loading notifications…</p>
+        ) : notifications.length === 0 ? (
+          <p>No notifications yet.</p>
+        ) : (
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
+            {notifications.map((notification) => (
+              <li
+                key={notification.id}
+                style={{
+                  padding: 14,
+                  borderRadius: 12,
+                  background: notification.read ? '#fff' : '#e8f0ff',
+                  border: '1px solid #d8dde8',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                  <div>
+                    <strong style={{ display: 'block', marginBottom: 4 }}>{notification.student_name} submitted an application</strong>
+                    <div style={{ color: '#555' }}>{notification.program} at {notification.university}</div>
+                    <div style={{ color: '#555', marginTop: 4 }}>Email: {notification.student_email}</div>
+                    <div style={{ color: '#555', marginTop: 4 }}>Application ID: {notification.application_id}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {!notification.read && (
+                      <span style={{ padding: '4px 8px', borderRadius: 999, background: '#0070f3', color: '#fff', fontSize: 12 }}>NEW</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => markNotificationRead(notification.id, !notification.read)}
+                      style={{ padding: '8px 12px', borderRadius: 999, background: notification.read ? '#eee' : '#0070f3', color: notification.read ? '#333' : '#fff', border: 'none', cursor: 'pointer' }}
+                    >
+                      {notification.read ? 'Mark unread' : 'Mark read'}
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 

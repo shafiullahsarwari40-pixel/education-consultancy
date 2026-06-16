@@ -11,6 +11,7 @@ import Contact from '../components/Contact';
 import FollowHorizon from '../components/FollowHorizon';
 import Footer from '../components/Footer';
 import WhatsAppButton from '../components/WhatsAppButton';
+import NextSectionButton from '../components/NextSectionButton';
 import WhyChooseHorizon from '../components/WhyChooseHorizon';
 import FAQSection from '../components/FAQSection';
 import SocialProof from '../components/SocialProof';
@@ -24,20 +25,15 @@ export default function Home() {
       <main>
         <Hero />
         <About />
-        <WhyChooseHorizon />
-        <Testimonials />
-        <WhyTurkey />
         <Services />
-        <SocialProof />
+        <WhyTurkey />
         <Universities />
         <Programs />
         <ApplicationProcessTimeline />
-        <StudentDashboard />
+        <Testimonials />
         <FAQSection />
-
-        <AgentPartnership />
         <Contact />
-        <FollowHorizon />
+        <NextSectionButton />
       </main>
       <Footer />
       <WhatsAppButton />

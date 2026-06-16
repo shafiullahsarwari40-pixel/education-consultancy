@@ -9,16 +9,60 @@ export default function Navbar() {
   const { language, changeLanguage, t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('hero');
+  const [scrolled, setScrolled] = useState(false);
 
   const isRTL = language === 'da' || language === 'ps';
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    if (mobileOpen) {
+      document.body.classList.add('mobile-menu-open');
+    } else {
+      document.body.classList.remove('mobile-menu-open');
+    }
     return () => {
       document.body.style.overflow = '';
+      document.body.classList.remove('mobile-menu-open');
     };
   }, [mobileOpen]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const observed = Array.from(document.querySelectorAll('section[id], section.section'));
+    if (!observed.length) return;
+
+    const obs = new IntersectionObserver((entries) => {
+      // choose the entry with largest intersectionRatio
+      let best = null;
+      entries.forEach(e => {
+        if (!best || e.intersectionRatio > best.intersectionRatio) best = e;
+        // toggle in-view class for subtle animations
+        if (e.isIntersecting) {
+          e.target.classList.add('in-view');
+        } else {
+          e.target.classList.remove('in-view');
+        }
+      });
+      if (best && best.isIntersecting) {
+        const id = best.target.id || best.target.className.split(' ')[0] || 'hero';
+        setActiveSection(id || 'hero');
+      }
+    }, { threshold: [0.25, 0.5, 0.75] });
+
+    observed.forEach(s => obs.observe(s));
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > 8);
+    }
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   useEffect(() => {
     if (!mobileOpen) {
@@ -42,12 +86,10 @@ export default function Navbar() {
   const navItems = [
     { href: '/', label: t('nav.home') },
     { href: '#about', label: t('nav.about') },
-    { href: '#why-turkey', label: t('nav.whyTurkey') },
     { href: '#services', label: t('nav.services') },
     { href: '#universities', label: t('nav.universities') },
-    { href: '#programs', label: t('nav.programs') },
-    { href: '#contact', label: t('nav.contact') },
     { href: '/student/result', label: t('nav.seeResult') },
+    { href: '#contact', label: t('nav.contact') },
   ];
 
   function closeAll() {
@@ -61,7 +103,7 @@ export default function Navbar() {
   }
 
   return (
-    <header dir={isRTL ? 'rtl' : 'ltr'} className="navbar">
+    <header dir={isRTL ? 'rtl' : 'ltr'} className={`navbar${scrolled ? ' scrolled' : ''}`}>
       <div className="navbar-inner">
         <Link href="/" className="navbar-logo" onClick={closeAll}>
           <Image
@@ -76,11 +118,16 @@ export default function Navbar() {
         </Link>
 
         <nav className="navbar-menu desktop" aria-label="Primary navigation">
-          {navItems.map((item) => (
-            <a key={item.href} href={item.href} className="nav-link" onClick={closeAll}>
-              {item.label}
-            </a>
-          ))}
+          {navItems.map((item) => {
+            const isHash = item.href.startsWith('#');
+            const match = isHash ? item.href.slice(1) : (item.href === '/' ? 'hero' : '');
+            const active = match ? activeSection === match : false;
+            return (
+              <a key={item.href} href={item.href} className={`nav-link${active ? ' active' : ''}`} onClick={closeAll}>
+                {item.label}
+              </a>
+            );
+          })}
         </nav>
 
         <div className="navbar-right">
@@ -112,7 +159,7 @@ export default function Navbar() {
           </div>
 
           <Link href="/apply" className="button button-primary navbar-apply" onClick={closeAll}>
-            {t('hero.applyBtn')}
+            {t('nav.apply')}
           </Link>
 
           <button
@@ -125,7 +172,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {mobileOpen && (
+      {mobileOpen && typeof window !== 'undefined' && window.innerWidth < 992 && (
         <div className="mobile-menu" role="dialog" aria-modal="true">
           <div className="mobile-panel">
             <button className="menu-close" onClick={closeAll} aria-label={t('common.closeMenu')}>

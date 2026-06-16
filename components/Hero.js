@@ -44,7 +44,7 @@ export default function Hero() {
   }, []);
 
   return (
-    <section className="hero">
+    <section id="hero" className="hero section">
       <div className="hero-slider" aria-live="polite">
         {heroSlides.map((slide, index) => (
           <div key={slide.src} className={`hero-slide ${index === activeIndex ? 'active' : ''}`}>

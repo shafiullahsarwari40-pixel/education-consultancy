@@ -10,6 +10,7 @@ ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) ON DELETE CASCAD
 ADD COLUMN IF NOT EXISTS application_status text DEFAULT 'submitted',
 ADD COLUMN IF NOT EXISTS acceptance_letter_url text,
 ADD COLUMN IF NOT EXISTS acceptance_letter_path text,
+ADD COLUMN IF NOT EXISTS submission_token text UNIQUE,
 ADD COLUMN IF NOT EXISTS admin_note text,
 ADD COLUMN IF NOT EXISTS rejection_message text,
 ADD COLUMN IF NOT EXISTS status_updated_at timestamptz DEFAULT now();
@@ -94,6 +95,26 @@ ON applications(application_status);
 
 CREATE INDEX IF NOT EXISTS idx_applications_created_at
 ON applications(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_applications_submission_token
+ON applications(submission_token);
+
+CREATE TABLE IF NOT EXISTS admin_notifications (
+  id bigserial PRIMARY KEY,
+  application_id uuid REFERENCES applications(id) ON DELETE CASCADE,
+  student_name text NOT NULL,
+  student_email text NOT NULL,
+  program text,
+  university text,
+  read boolean DEFAULT false,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_notifications_read
+ON admin_notifications(read);
+
+CREATE INDEX IF NOT EXISTS idx_admin_notifications_created_at
+ON admin_notifications(created_at DESC);
 
 -- Step 9: Enable RLS on profiles table
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;

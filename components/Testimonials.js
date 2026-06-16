@@ -26,7 +26,7 @@ export default function Testimonials() {
   ];
 
   return (
-    <section className="section">
+    <section id="testimonials" className="section">
       <div className="container">
         <div className="section-header">
           <span className="section-label">{t('testimonials.label')}</span>

@@ -7,6 +7,13 @@ import { supabase } from '../lib/supabaseClient';
 import { useLanguage } from '../lib/LanguageContext';
 import { translations } from '../lib/translations';
 
+function makeSubmissionToken() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Math.random().toString(36).slice(2)}-${Date.now()}`;
+}
+
 const universities = [
   'Adıyaman University',
   'Ankara Yıldırım Beyazıt University',
@@ -69,6 +76,7 @@ export default function ApplicationForm() {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [fileSizeError, setFileSizeError] = useState('');
+  const [submissionToken, setSubmissionToken] = useState(makeSubmissionToken());
   const [formState, setFormState] = useState({
     full_name: '',
     email: '',
@@ -365,6 +373,8 @@ export default function ApplicationForm() {
         }
       }
 
+      formData.append('submission_token', submissionToken);
+
       const res = await fetch('/api/submit', {
         method: 'POST',
         headers: {
@@ -410,6 +420,7 @@ export default function ApplicationForm() {
         id_card: null,
         photo: null,
       });
+      setSubmissionToken(makeSubmissionToken());
       event.target.reset();
       
       // Delay redirect by 3 seconds to let user see success message
@@ -719,16 +730,55 @@ export default function ApplicationForm() {
               { key: 'photo', labelText: t('form.photo') },
             ].map(({ key, labelKey, labelText }) => {
               const selected = Boolean(formState[key]);
+              const label = labelText || (labelKey ? t(labelKey) : '');
+              const inputId = `file-input-${key}`;
+
               return (
                 <div
                   key={key}
-                  className={`file-upload ${selected ? 'selected' : ''}`}
-                  onClick={(e) => e.currentTarget.querySelector('input').click()}
+                  className={`file-upload-card ${selected ? 'selected' : ''}`}
+                  onClick={() => document.getElementById(inputId)?.click()}
                 >
-                  <span className="file-upload-icon">📄</span>
-                  <span className="file-upload-text">{labelText || (labelKey ? t(labelKey) : '')}</span>
-                  {selected && <span className="file-name">{formState[key].name}</span>}
+                  <div className="card-top">
+                    <div className="file-upload-icon">📄</div>
+                    <div className="file-upload-title">{label}</div>
+                  </div>
+
+                  <div className="card-body">
+                    {selected ? (
+                      <div className="file-preview">{formState[key].name}</div>
+                    ) : (
+                      <div className="file-placeholder">{t('form.noFile')}</div>
+                    )}
+                  </div>
+
+                  <div className="card-footer">
+                    <button
+                      type="button"
+                      className="button button-outline upload-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        document.getElementById(inputId)?.click();
+                      }}
+                    >
+                      {selected ? t('form.change') : t('form.upload')}
+                    </button>
+                    {selected && (
+                      <button
+                        type="button"
+                        className="button button-secondary remove-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFormState((prev) => ({ ...prev, [key]: null }));
+                        }}
+                      >
+                        {t('form.remove')}
+                      </button>
+                    )}
+                  </div>
+
                   <input
+                    id={inputId}
                     type="file"
                     accept="application/pdf,image/*"
                     onChange={(e) => handleFileChange(e, key)}
