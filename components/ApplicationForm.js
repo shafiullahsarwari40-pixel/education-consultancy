@@ -89,7 +89,7 @@ export default function ApplicationForm() {
     photo: null,
   });
   const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-  const MAX_TOTAL_UPLOAD_BYTES = 30 * 1024 * 1024;
+  const MAX_TOTAL_UPLOAD_BYTES = 50 * 1024 * 1024;
 
   const formatBytes = (bytes) => {
     if (bytes < 1024) return `${bytes} B`;
