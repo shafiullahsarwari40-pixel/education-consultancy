@@ -173,43 +173,57 @@ export default function Navbar() {
       </div>
 
       {mobileOpen && typeof window !== 'undefined' && window.innerWidth < 992 && (
-        <div className="mobile-menu" role="dialog" aria-modal="true">
-          <div className="mobile-panel">
-            <button className="menu-close" onClick={closeAll} aria-label={t('common.closeMenu')}>
-              ×
-            </button>
-            <nav className="mobile-nav-links" aria-label="Mobile navigation">
-              {navItems.map((item) => (
-                <a key={item.href} href={item.href} className="nav-link" onClick={closeAll}>
-                  {item.label}
-                </a>
-              ))}
-            </nav>
-            <div className="mobile-language">
-              <button
-                type="button"
-                className="mobile-lang-toggle"
-                onClick={() => setLangOpen((open) => !open)}
-                aria-expanded={langOpen}
-                aria-haspopup="menu"
-              >
-                <span>{currentLanguage.name}</span>
-                <span>{langOpen ? '▴' : '▾'}</span>
+        <div className="mobile-menu" role="dialog" aria-modal="true" onClick={closeAll}>
+          <div className="mobile-panel" onClick={(event) => event.stopPropagation()}>
+            <div className="mobile-panel-header">
+              <Link href="/" className="mobile-panel-logo" onClick={closeAll}>
+                <Image
+                  src="/images/logo.png"
+                  alt="Horizon logo"
+                  width={180}
+                  height={40}
+                  style={{ objectFit: 'contain', background: 'transparent' }}
+                  priority
+                />
+              </Link>
+              <button className="menu-close" onClick={closeAll} aria-label={t('common.closeMenu')}>
+                ×
               </button>
-              {langOpen && (
-                <div className="mobile-lang-dropdown">
-                  {languages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      type="button"
-                      className={language === lang.code ? 'active' : ''}
-                      onClick={() => handleLanguageSelect(lang.code)}
-                    >
-                      {lang.name}
-                    </button>
-                  ))}
-                </div>
-              )}
+            </div>
+            <div className="mobile-panel-body">
+              <nav className="mobile-nav-links" aria-label="Mobile navigation">
+                {navItems.map((item) => (
+                  <a key={item.href} href={item.href} className="nav-link" onClick={closeAll}>
+                    {item.label}
+                  </a>
+                ))}
+              </nav>
+              <div className="mobile-language">
+                <button
+                  type="button"
+                  className="mobile-lang-toggle"
+                  onClick={() => setLangOpen((open) => !open)}
+                  aria-expanded={langOpen}
+                  aria-haspopup="menu"
+                >
+                  <span>{currentLanguage.name}</span>
+                  <span>{langOpen ? '▴' : '▾'}</span>
+                </button>
+                {langOpen && (
+                  <div className="mobile-lang-dropdown">
+                    {languages.map((lang) => (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        className={language === lang.code ? 'active' : ''}
+                        onClick={() => handleLanguageSelect(lang.code)}
+                      >
+                        {lang.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <Link href="/apply" className="button button-primary button-large mobile-apply" onClick={closeAll}>
               {t('hero.applyBtn')}
