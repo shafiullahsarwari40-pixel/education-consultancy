@@ -334,14 +334,20 @@ p {
 
 .navbar { overflow: visible; }
 
-.navbar-menu.desktop { min-width: 0; flex: 1 1 auto; display: flex; justify-content: flex-start; gap: 1rem; }
-.navbar-menu.desktop a { white-space: nowrap; }
+.navbar-menu.desktop { min-width: 0; flex: 1 1 auto; display: flex; justify-content: flex-start; gap: 2rem; }
+.navbar-menu.desktop a,
+.navbar-menu.desktop .nav-link {
+  display: inline-flex;
+  white-space: nowrap;
+  margin-right: 1rem;
+  padding: 0 0.25rem;
+}
 
 /* CENTER: Navigation menu */
 .navbar-menu.desktop {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 2rem;
   list-style: none;
   flex: 1 1 auto;
   white-space: nowrap;

@@ -85,7 +85,7 @@ export default function Navbar() {
         {/* CENTER: Navigation */}
         <nav className="navbar-menu desktop" aria-label="Primary navigation">
           {navItems.map((item) => (
-            <a key={item.href} href={item.href} onClick={closeAll}>
+            <a key={item.href} href={item.href} className="nav-link" onClick={closeAll}>
               {item.label}
             </a>
           ))}
@@ -120,7 +120,7 @@ export default function Navbar() {
             <button className="menu-close" onClick={closeAll} aria-label={t('common.closeMenu')}>×</button>
             <nav className="mobile-nav-links">
               {navItems.map((item) => (
-                <a key={item.href} href={item.href} onClick={closeAll}>{item.label}</a>
+                <a key={item.href} href={item.href} className="nav-link" onClick={closeAll}>{item.label}</a>
               ))}
             </nav>
             <div className="mobile-social">
