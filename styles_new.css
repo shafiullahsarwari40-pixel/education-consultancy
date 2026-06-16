@@ -742,14 +742,6 @@ body.mobile-menu-open .next-section-btn {
   display: flex;
   justify-content: flex-end;
   z-index: 4200; /* ensure mobile menu overlays floating buttons and next-section */
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-.mobile-menu.open {
-  opacity: 1;
-  pointer-events: auto;
 }
 
 .mobile-panel {
@@ -2804,6 +2796,126 @@ footer a:hover {
 
 /* end header overrides */
 
+/* ==================== WHY TURKEY (Premium) ==================== */
+.why-section {
+  padding: var(--spacing-3xl) 0;
+}
+
+.why-inner {
+  display: grid;
+  grid-template-columns: 1fr 480px;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.why-content { order: 1; }
+.why-media { order: 2; }
+
+.why-stats {
+  display: flex;
+  gap: 2rem;
+  margin: 1.25rem 0 1.75rem;
+  align-items: baseline;
+}
+
+.stat { text-align: left; }
+.stat-num {
+  font-size: 2.6rem;
+  line-height: 1;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.02em;
+}
+.stat-label { color: var(--text-muted); font-weight: 600; }
+
+.why-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.why-card {
+  background: linear-gradient(180deg, #ffffff, #fbfbff);
+  border: 1px solid rgba(15,23,42,0.06);
+  border-radius: 14px;
+  padding: 1.1rem;
+  min-height: 160px; /* reduced height (~20%) */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: transform 0.36s cubic-bezier(.2,.9,.2,1), box-shadow 0.36s, border-color 0.36s;
+  will-change: transform;
+}
+
+.why-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 18px 40px rgba(15,23,42,0.12);
+  border-color: rgba(0,168,232,0.18);
+}
+
+.why-card-icon {
+  width: 56px;
+  height: 56px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(0,168,232,0.08), rgba(0,31,92,0.03));
+}
+
+.why-card-title { font-size: 1.05rem; font-weight: 700; margin-top: 0.25rem; }
+.why-card-desc { color: var(--text-muted); margin-top: auto; }
+
+.media-wrap { position: relative; width: 100%; height: 100%; border-radius: 14px; overflow: hidden; }
+.media-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s ease; }
+.media-wrap:hover .media-inner img { transform: scale(1.06); }
+
+.trust-badge {
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255,255,255,0.98);
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(15,23,42,0.12);
+  z-index: 20;
+}
+.trust-badge img { width: 34px; height: 34px; border-radius: 8px; }
+.trust-badge .badge-text { font-weight: 700; font-size: 0.85rem; color: var(--primary); }
+
+.why-cta { margin-top: 1.75rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.cta-heading { font-size: 1.25rem; font-weight: 800; margin: 0; }
+.cta-actions { display: flex; gap: 0.75rem; }
+.button-outline { border: 1px solid rgba(15,23,42,0.08); background: transparent; padding: 0.7rem 1rem; border-radius: 10px; }
+
+/* Make cards slightly wider visually while keeping 3 per row */
+@media (min-width: 1100px) {
+  .why-inner { grid-template-columns: 1fr 520px; }
+  .why-card { min-height: 150px; }
+}
+
+@media (max-width: 1024px) {
+  .why-inner { grid-template-columns: 1fr; }
+  .why-media { order: 1; margin-bottom: 1.25rem; }
+  .why-content { order: 2; }
+  .why-cards-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-num { font-size: 2rem; }
+}
+
+@media (max-width: 640px) {
+  .why-cards-grid { grid-template-columns: 1fr; }
+  .stat-num { font-size: 1.6rem; }
+  .why-inner { gap: 1rem; }
+}
+
+/* Ensure the section sits above hero when needed */
+.why-section { position: relative; z-index: 5; }
+
+/* ==================== END WHY TURKEY ==================== */
+
 /* New strict header layout: three containers */
 .navbar-inner {
   display: flex !important;
@@ -3081,22 +3193,14 @@ body.mobile-menu-open {
   .mobile-menu {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.35);
+    background: #ffffff;
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     align-items: stretch;
-    z-index: 100001 !important;
+    z-index: 9999;
     animation: fadeInBackdrop 0.25s ease;
-    pointer-events: none;
-    opacity: 0;
-    visibility: hidden;
-    overflow: hidden;
-  }
-
-  .mobile-menu.open {
     pointer-events: auto;
-    opacity: 1;
-    visibility: visible;
+    overflow: hidden;
   }
 
   @keyframes fadeInBackdrop {
@@ -3105,7 +3209,7 @@ body.mobile-menu-open {
   }
 
   .mobile-panel {
-    width: min(360px, 100%);
+    width: 100%;
     max-width: 100%;
     min-height: 100vh;
     background: #ffffff;
@@ -3115,7 +3219,7 @@ body.mobile-menu-open {
     flex-direction: column;
     gap: 1.5rem;
     animation: slideInPanel 0.25s ease;
-    z-index: 100002 !important;
+    z-index: 9999;
     position: relative;
     pointer-events: auto;
     border-radius: 0;
@@ -3123,7 +3227,7 @@ body.mobile-menu-open {
   }
 
   @keyframes slideInPanel {
-    from { transform: translateX(100%); opacity: 0; }
+    from { transform: translateX(12px); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
   }
 
@@ -3145,8 +3249,11 @@ body.mobile-menu-open {
     pointer-events: none;
   }
 
+  /* explicitly hide header logo when mobile menu is open to avoid duplicates */
+  .navbar.menu-open .navbar-logo { display: none !important; }
+
   .navbar.menu-open .navbar-inner + .mobile-menu {
-    z-index: 100001 !important;
+    z-index: 9999;
   }
 
   .mobile-panel-logo {
