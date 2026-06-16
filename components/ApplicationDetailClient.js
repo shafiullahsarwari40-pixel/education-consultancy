@@ -86,12 +86,6 @@ export default function ApplicationDetailClient({ id }) {
   async function openDocument(docUrl) {
     if (!session) return;
 
-    const newWindow = window.open('about:blank');
-    if (!newWindow) {
-      alert('Please allow popups for this site to download documents.');
-      return;
-    }
-
     try {
       const targetUrl = docUrl.startsWith('/api/admin/document')
         ? docUrl
@@ -108,19 +102,32 @@ export default function ApplicationDetailClient({ id }) {
         }
         const err = await res.json().catch(() => ({ error: 'Unknown error' }));
         console.error('Document fetch failed', err);
-        newWindow.close();
-        alert(err.error || 'Failed to open document');
+        alert(err.error || 'Failed to download document');
         return;
       }
 
-      const contentType = res.headers.get('content-type') || 'application/octet-stream';
       const blob = await res.blob();
-      const objectUrl = URL.createObjectURL(new Blob([blob], { type: contentType }));
-      newWindow.location.href = objectUrl;
+      const contentDisposition = res.headers.get('content-disposition') || '';
+      let filename = 'document.pdf';
+      const filenameMatch = contentDisposition.match(/filename\*?=([^;]+)/i);
+      if (filenameMatch) {
+        filename = filenameMatch[1].trim().replace(/(^"|"$)/g, '');
+      } else {
+        const urlFilename = targetUrl.split('?')[0].split('/').pop();
+        if (urlFilename) filename = urlFilename;
+      }
+
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(objectUrl);
+      document.body.removeChild(a);
     } catch (err) {
-      console.error('Open document error', err);
-      newWindow.close();
-      alert('Unable to open document.');
+      console.error('Download document error', err);
+      alert('Unable to download document.');
     }
   }
 
@@ -271,11 +278,11 @@ export default function ApplicationDetailClient({ id }) {
             <p style={{ margin: 0 }}>An acceptance letter has already been uploaded for this application.</p>
             <button
               type="button"
-              onClick={() => window.open(application.acceptance_letter_url, '_blank')}
+              onClick={() => openDocument(application.acceptance_letter_url)}
               className="button button-secondary"
               style={{ marginTop: 10 }}
             >
-              Open Acceptance Letter
+              Download Acceptance Letter
             </button>
           </div>
         ) : (
