@@ -34,11 +34,15 @@ export default function AdminDashboard() {
       }
       
       setSession(s);
-      await Promise.all([
-        fetchApps(s.access_token, search, sort),
-        fetchMessages(s.access_token),
-        fetchNotifications(s.access_token),
-      ]);
+      try {
+        await Promise.allSettled([
+          fetchApps(s.access_token, search, sort),
+          fetchMessages(s.access_token),
+          fetchNotifications(s.access_token),
+        ]);
+      } catch (err) {
+        console.error('Admin dashboard startup error', err);
+      }
     })();
   }, []);
 
@@ -64,10 +68,15 @@ export default function AdminDashboard() {
           return;
         }
         const body = await res.json().catch(() => ({ error: 'Unable to fetch contact messages' }));
-        throw new Error(body.error || 'Unable to fetch contact messages');
+        const message = body.error || 'Unable to fetch contact messages';
+        console.error('Fetch contact messages error', message);
+        setError(message);
+        return;
       }
+
       const body = await res.json();
       setMessages(body.messages || []);
+      setError(null);
     } catch (err) {
       console.error('Fetch contact messages error', err);
       setError(err.message || 'Failed to load contact messages');
@@ -109,12 +118,16 @@ export default function AdminDashboard() {
           return;
         }
         const body = await res.json().catch(() => ({ error: 'Unable to fetch notifications' }));
-        throw new Error(body.error || 'Unable to fetch notifications');
+        const message = body.error || 'Unable to fetch notifications';
+        console.error('Fetch notifications error', message);
+        setError(message);
+        return;
       }
 
       const body = await res.json();
       setNotifications(body.notifications || []);
       setUnreadCount((body.notifications || []).filter((n) => !n.read).length);
+      setError(null);
     } catch (err) {
       console.error('Fetch notifications error', err);
       setError(err.message || 'Failed to load notifications');

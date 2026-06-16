@@ -122,20 +122,20 @@ select:focus {
   padding: 0 var(--spacing-sm);
 }
 
-/* Scroll snapping and section sizing for a modern, controlled scroll UX */
+/* General section layout */
 main {
-  scroll-snap-type: y proximity;
+  scroll-snap-type: none;
 }
 
 section,
 .section {
-  scroll-snap-align: start;
+  scroll-snap-align: none;
   scroll-margin-top: calc(96px + 16px);
-  min-height: 90vh;
+  min-height: auto;
   display: block;
-  transition: opacity 0.6s ease, transform 0.6s ease;
-  opacity: 0;
-  transform: translateY(8px);
+  transition: none;
+  opacity: 1;
+  transform: none;
 }
 
 /* Ensure section titles aren't hidden under sticky navbar when linking */
@@ -156,7 +156,7 @@ section,
 section.in-view,
 .section.in-view {
   opacity: 1;
-  transform: translateY(0);
+  transform: none;
 }
 
 @media (max-width: 991px) {

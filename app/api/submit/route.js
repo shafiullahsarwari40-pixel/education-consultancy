@@ -74,7 +74,6 @@ export async function POST(request) {
   const program = formData.get('program') || '';
   const university = formData.get('university') || '';
   const message = formData.get('message') || '';
-  const submission_token = formData.get('submission_token') || '';
 
   const auth = request.headers.get('authorization') || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : auth;
@@ -100,29 +99,10 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  if (!submission_token) {
-    return NextResponse.json({ error: 'Submission token required' }, { status: 400 });
-  }
-
   try {
-    const { data: existingApplications, error: existingError } = await supabaseAdmin
-      .from('applications')
-      .select('id')
-      .eq('submission_token', submission_token)
-      .limit(1);
-
-    if (existingError) {
-      console.error('Submission token lookup error:', existingError);
-      return NextResponse.json({ error: existingError.message || 'Failed to verify submission token' }, { status: 500 });
-    }
-
-    if (existingApplications && existingApplications.length > 0) {
-      return NextResponse.json({ success: true, applicationId: existingApplications[0].id, duplicate: true });
-    }
-
     const { data: applicationData, error: appError } = await supabaseAdmin
       .from('applications')
-      .insert([{ full_name, email, phone, mother_name, father_name, address, country, program, university, message, user_id, application_status: 'submitted', status_updated_at: new Date().toISOString(), submission_token }])
+      .insert([{ full_name, email, phone, mother_name, father_name, address, country, program, university, message, user_id, application_status: 'submitted', status_updated_at: new Date().toISOString() }])
       .select();
 
     if (appError || !applicationData || applicationData.length === 0) {

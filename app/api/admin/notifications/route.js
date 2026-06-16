@@ -41,7 +41,13 @@ export async function GET(request) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    return NextResponse.json({ error: error.message || 'Failed to fetch notifications' }, { status: 500 });
+    const message = error.message || 'Failed to fetch notifications';
+    const missingTable = /Could not find the table/i.test(message);
+    if (missingTable) {
+      console.warn('Admin notifications table missing. Returning empty notifications list.');
+      return NextResponse.json({ notifications: [] });
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 
   return NextResponse.json({ notifications: data || [] });

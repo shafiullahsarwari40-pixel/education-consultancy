@@ -7,13 +7,6 @@ import { supabase } from '../lib/supabaseClient';
 import { useLanguage } from '../lib/LanguageContext';
 import { translations } from '../lib/translations';
 
-function makeSubmissionToken() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return `${Math.random().toString(36).slice(2)}-${Date.now()}`;
-}
-
 const universities = [
   'Adıyaman University',
   'Ankara Yıldırım Beyazıt University',
@@ -76,7 +69,6 @@ export default function ApplicationForm() {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [fileSizeError, setFileSizeError] = useState('');
-  const [submissionToken, setSubmissionToken] = useState(makeSubmissionToken());
   const [formState, setFormState] = useState({
     full_name: '',
     email: '',
@@ -373,8 +365,6 @@ export default function ApplicationForm() {
         }
       }
 
-      formData.append('submission_token', submissionToken);
-
       const res = await fetch('/api/submit', {
         method: 'POST',
         headers: {
@@ -420,7 +410,6 @@ export default function ApplicationForm() {
         id_card: null,
         photo: null,
       });
-      setSubmissionToken(makeSubmissionToken());
       event.target.reset();
       
       // Delay redirect by 3 seconds to let user see success message
