@@ -327,7 +327,7 @@ p {
 .navbar {
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 9999;
   background-color: rgba(255,255,255,0.88);
   backdrop-filter: blur(6px);
   box-shadow: none;
@@ -3068,11 +3068,13 @@ footer a:hover {
 .mobile-menu {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   justify-content: flex-end;
-  z-index: 4200;
+  z-index: 9998;
   animation: fadeInBackdrop 0.25s ease;
+  pointer-events: auto;
+  overflow: hidden;
 }
 
 @keyframes fadeInBackdrop {
@@ -3089,6 +3091,9 @@ footer a:hover {
   flex-direction: column;
   gap: 1.25rem;
   animation: slideInPanel 0.3s ease;
+  z-index: 9999;
+  position: relative;
+  pointer-events: auto;
 }
 
 @keyframes slideInPanel {
