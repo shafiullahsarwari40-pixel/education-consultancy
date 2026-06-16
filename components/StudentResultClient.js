@@ -308,16 +308,18 @@ export default function StudentResultClient() {
             {hasAcceptanceLetter ? (
               <button
                 onClick={() => {
-                  if (application.acceptance_letter_url) {
-                    window.open(application.acceptance_letter_url, '_blank');
-                    return;
-                  }
-
                   fetch('/api/student/acceptance-letter', {
                     headers: { Authorization: `Bearer ${session?.access_token}` },
                   })
-                    .then(res => {
-                      if (!res.ok) throw new Error(t('studentResult.downloadError'));
+                    .then(async res => {
+                      if (!res.ok) {
+                        let errorText = t('studentResult.downloadError');
+                        try {
+                          const body = await res.json();
+                          if (body?.error) errorText = body.error;
+                        } catch (jsonErr) {}
+                        throw new Error(errorText);
+                      }
                       return res.blob();
                     })
                     .then(blob => {
