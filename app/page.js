@@ -1,5 +1,4 @@
 import Navbar from '../components/Navbar';
-import FloatingLanguageChanger from '../components/FloatingLanguageChanger';
 import Hero from '../components/Hero';
 import About from '../components/About';
 import WhyTurkey from '../components/WhyTurkey';
@@ -22,7 +21,6 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <FloatingLanguageChanger />
       <main>
         <Hero />
         <About />
