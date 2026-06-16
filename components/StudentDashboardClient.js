@@ -56,6 +56,12 @@ export default function StudentDashboardClient() {
         },
       });
 
+      if (res.status === 401) {
+        await supabase.auth.signOut();
+        router.replace('/student/login');
+        return;
+      }
+
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || t('studentDashboard.errorUnableFetchApplication'));

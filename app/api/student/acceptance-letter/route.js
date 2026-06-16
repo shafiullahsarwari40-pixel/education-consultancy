@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin, isInvalidSupabaseApiKeyError, supabaseAdminKeyMalformed } from '../../../../lib/supabaseAdmin';
+import { supabaseAdmin, isInvalidSupabaseApiKeyError, isSupabaseSessionMissingError, supabaseAdminKeyMalformed } from '../../../../lib/supabaseAdmin';
 
 async function requireUser(request) {
   const auth = request.headers.get('authorization') || '';
@@ -21,6 +21,13 @@ async function requireUser(request) {
         ok: false,
         status: 500,
         body: { error: 'Server auth configuration invalid. Check SUPABASE_SERVICE_ROLE_KEY.' },
+      };
+    }
+    if (isSupabaseSessionMissingError(error)) {
+      return {
+        ok: false,
+        status: 401,
+        body: { error: 'Auth session invalid or expired. Please sign in again.' },
       };
     }
     return { ok: false, status: 401, body: { error: 'Invalid auth token' } };

@@ -8,33 +8,26 @@ import { useLanguage } from '../lib/LanguageContext';
 import { translations } from '../lib/translations';
 
 const universities = [
-  'Adiyaman University',
-  'Ankara Yildirim Beyazit Universitesi',
-  'Burdur University',
-  'Kirikkale University',
-  'Duzce University',
-  'Zonguldak University',
+  'Adıyaman University',
+  'Ankara Yıldırım Beyazıt University',
+  'Burdur Mehmet Akif Ersoy University',
+  'Kırıkkale University',
+  'Düzce University',
+  'Zonguldak Bülent Ecevit University',
   'Kastamonu University',
-  'Usak University',
-  'Izmir University',
+  'Uşak University',
+  'İzmir Katip Çelebi University',
   'Mersin University',
-  'Samsun University',
-  'Eskisehir Anadolu University',
+  'Ondokuz Mayıs University',
+  'Anadolu University',
+  'Karabük University',
 ];
 
 const PROGRAMS = [
-  'Agriculture',
-  'Architecture',
-  'Arts',
-  'Business',
-  'Computer Science',
-  'Engineering',
-  'Law',
-  'Medicine',
-  'Nursing',
-  'Pharmacy',
-  'Other',
-].sort();
+  'Bachelor',
+  'Master',
+  'PhD',
+];
 
 const COUNTRIES = [
   'Afghanistan','Albania','Algeria','Andorra','Angola','Argentina','Armenia','Australia','Austria','Azerbaijan',
@@ -67,9 +60,11 @@ export default function ApplicationForm() {
   const [countrySearch, setCountrySearch] = useState('');
   const [programSearch, setProgramSearch] = useState('');
   const [facultySearch, setFacultySearch] = useState('');
+  const [universitySearch, setUniversitySearch] = useState('');
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [showProgramDropdown, setShowProgramDropdown] = useState(false);
   const [showFacultyDropdown, setShowFacultyDropdown] = useState(false);
+  const [showUniversityDropdown, setShowUniversityDropdown] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -155,6 +150,10 @@ export default function ApplicationForm() {
     p.toLowerCase().includes(programSearch.toLowerCase())
   );
 
+  const filteredUniversities = universities.filter(u => 
+    u.toLowerCase().includes(universitySearch.toLowerCase())
+  );
+
   const facultyOptions = Object.entries(translations[language]?.faculties || {}).map(([key, label]) => ({
     key,
     label,
@@ -236,6 +235,16 @@ export default function ApplicationForm() {
 
   function handleFacultyBlur() {
     setTimeout(() => setShowFacultyDropdown(false), 200);
+  }
+
+  function handleUniversitySelect(university) {
+    setFormState((prev) => ({ ...prev, university }));
+    setUniversitySearch(university);
+    setShowUniversityDropdown(false);
+  }
+
+  function handleUniversityBlur() {
+    setTimeout(() => setShowUniversityDropdown(false), 200);
   }
 
   function handleCloseSuccessModal() {
@@ -402,7 +411,11 @@ export default function ApplicationForm() {
         photo: null,
       });
       event.target.reset();
-      router.push('/student/dashboard');
+      
+      // Delay redirect by 3 seconds to let user see success message
+      setTimeout(() => {
+        router.push('/student/dashboard');
+      }, 3000);
       return;
     } catch (error) {
       console.error('Application submit error:', error);
@@ -646,14 +659,40 @@ export default function ApplicationForm() {
 
         <div>
           <label className="form-label">{t('form.university')}</label>
-          <input
-            name="university"
-            type="text"
-            value={formState.university}
-            onChange={handleChange}
-            placeholder={t('form.universityPlaceholder')}
-            className="form-input"
-          />
+          <div className="searchable-select">
+            <input
+              type="text"
+              name="university"
+              placeholder={t('form.searchUniversityPlaceholder')}
+              value={universitySearch}
+              onChange={(e) => {
+                const value = e.target.value;
+                setUniversitySearch(value);
+                setFormState((prev) => ({ ...prev, university: value }));
+                setShowUniversityDropdown(true);
+              }}
+              onFocus={() => setShowUniversityDropdown(true)}
+              onBlur={handleUniversityBlur}
+              className="form-input search-input"
+            />
+            {showUniversityDropdown && (
+              <div className="dropdown-list">
+                {filteredUniversities.length > 0 ? (
+                  filteredUniversities.map((university) => (
+                    <div
+                      key={university}
+                      className={`dropdown-item ${formState.university === university ? 'selected' : ''}`}
+                      onMouseDown={() => handleUniversitySelect(university)}
+                    >
+                      {university}
+                    </div>
+                  ))
+                ) : (
+                  <div className="dropdown-item disabled">{t('form.noUniversitiesFound')}</div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <div style={{ gridColumn: '1 / -1' }}>
@@ -687,7 +726,7 @@ export default function ApplicationForm() {
                   onClick={(e) => e.currentTarget.querySelector('input').click()}
                 >
                   <span className="file-upload-icon">📄</span>
-                  <span className="file-upload-text">{labelText || t(labelKey)}</span>
+                  <span className="file-upload-text">{labelText || (labelKey ? t(labelKey) : '')}</span>
                   {selected && <span className="file-name">{formState[key].name}</span>}
                   <input
                     type="file"
