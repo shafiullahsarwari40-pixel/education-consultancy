@@ -104,13 +104,13 @@ export default function Contact() {
               </div>
             </div>
             <div className="map-placeholder">
-              <h4>Google Maps Location</h4>
-              <p>Find us in Istanbul and check the local campus support area.</p>
+              <h4>{t('contact.mapTitle')}</h4>
+              <p>{t('contact.mapDescription')}</p>
               <a
                 href="https://www.google.com/maps/place/Istanbul,+Turkey"
                 target="_blank"
                 rel="noopener noreferrer"
-              >View on Google Maps</a>
+              >{t('contact.viewOnMap')}</a>
             </div>
             <div className="contact-social-buttons">
               <a

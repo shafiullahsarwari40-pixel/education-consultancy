@@ -6,8 +6,10 @@ import { useRouter } from 'next/navigation';
 import ApplicationForm from '../../components/ApplicationForm';
 import SelectedUniversityClient from '../../components/SelectedUniversityClient';
 import { supabase } from '../../lib/supabaseClient';
+import { useLanguage } from '../../lib/LanguageContext';
 
 export default function ApplyPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,7 @@ export default function ApplyPage() {
     return (
       <main className="section contact" style={{ minHeight: '80vh' }}>
         <div className="container">
-          <p style={{ textAlign: 'center', marginTop: '2rem' }}>Loading...</p>
+          <p style={{ textAlign: 'center', marginTop: '2rem' }}>{t('common.loading')}</p>
         </div>
       </main>
     );
@@ -114,12 +116,12 @@ export default function ApplyPage() {
             border: '1px solid #90caf9',
             marginTop: '2rem',
           }}>
-            <h2 style={{ marginTop: 0, color: '#0066cc' }}>Application Already Submitted</h2>
+            <h2 style={{ marginTop: 0, color: '#0066cc' }}>{t('apply.alreadySubmittedTitle')}</h2>
             <p style={{ color: '#333', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-              You have already submitted an application. You can check your application result from your student portal.
+              {t('apply.alreadySubmittedDescription')}
             </p>
             <Link href="/student/result" className="button button-primary button-large">
-              See Application Result
+              {t('apply.seeApplicationResultButton')}
             </Link>
           </div>
         </div>
@@ -137,12 +139,12 @@ export default function ApplyPage() {
                 Horizon
               </Link>
               <nav className="nav-menu">
-                <Link href="/">Back</Link>
+                <Link href="/">{t('common.back')}</Link>
               </nav>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <small style={{ color: '#666' }}>
-                Logged in as <strong>{session?.user?.email}</strong>
+                {t('common.loggedInAs')} <strong>{session?.user?.email}</strong>
               </small>
               <button className="button button-secondary" type="button" onClick={handleSignOut}>
                 Sign Out
@@ -156,9 +158,9 @@ export default function ApplyPage() {
         </Suspense>
 
         <div className="section-header">
-          <span>Application</span>
-          <h2>Apply for your chosen university</h2>
-          <p>Please provide your contact details and upload the requested documents.</p>
+          <span>{t('apply.applicationLabel')}</span>
+          <h2>{t('apply.applicationPageTitle')}</h2>
+          <p>{t('apply.applicationPageDescription')}</p>
         </div>
 
         <ApplicationForm />

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '../lib/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
 
 export default function StudentAuthClient() {
@@ -10,6 +11,7 @@ export default function StudentAuthClient() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/student/result';
   
+  const { t } = useLanguage();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,7 +22,7 @@ export default function StudentAuthClient() {
 
   useEffect(() => {
     if (!supabase) {
-      setMessage('Supabase client not configured. Please check your environment variables.');
+      setMessage(t('auth.errorSupabaseNotConfigured'));
       setCheckingSession(false);
       return;
     }
@@ -46,7 +48,7 @@ export default function StudentAuthClient() {
     setMessage('');
 
     if (!email || !password) {
-      setMessage('Please enter both email and password.');
+      setMessage(t('auth.password_required'));
       setLoading(false);
       return;
     }
@@ -73,7 +75,7 @@ export default function StudentAuthClient() {
 
       if (isSignUp) {
         if (data?.user) {
-          setMessage('Account created successfully! Please check your email to confirm your account before signing in.');
+          setMessage(t('auth.success_signup'));
           setEmail('');
           setPassword('');
           setLoading(false);
@@ -87,7 +89,7 @@ export default function StudentAuthClient() {
       }
     } catch (err) {
       console.error('Auth error:', err);
-      setMessage(err?.message || 'An error occurred. Please try again.');
+      setMessage(err?.message || t('auth.errorTryAgain'));
       setLoading(false);
     }
   }
@@ -95,7 +97,7 @@ export default function StudentAuthClient() {
   if (checkingSession) {
     return (
       <div style={{ display: 'grid', placeItems: 'center', minHeight: '80vh' }}>
-        <p>Loading...</p>
+        <p>{t('common.loading')}</p>
       </div>
     );
   }
@@ -104,20 +106,20 @@ export default function StudentAuthClient() {
     <main className="section" style={{ minHeight: '80vh' }}>
       <div className="container" style={{ maxWidth: 560, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem' }}>Student Portal</h2>
+          <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem' }}>{t('auth.login')}</h2>
           <p style={{ margin: '0', color: '#666', fontSize: '0.95rem' }}>
-            Create an account or sign in to continue your application
+            {t('auth.authDescription')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
           <label style={{ display: 'grid', gap: '0.5rem' }}>
-            <span style={{ fontWeight: 600, color: '#333' }}>Email</span>
+            <span style={{ fontWeight: 600, color: '#333' }}>{t('auth.email')}</span>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your.email@example.com"
+              placeholder={t('auth.emailPlaceholder')}
               className="form-input"
               required
               disabled={loading}
@@ -125,12 +127,12 @@ export default function StudentAuthClient() {
           </label>
 
           <label style={{ display: 'grid', gap: '0.5rem' }}>
-            <span style={{ fontWeight: 600, color: '#333' }}>Password</span>
+            <span style={{ fontWeight: 600, color: '#333' }}>{t('auth.password')}</span>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Create a strong password"
+              placeholder={t('auth.passwordPlaceholder')}
               className="form-input"
               required
               disabled={loading}
@@ -143,7 +145,7 @@ export default function StudentAuthClient() {
             disabled={loading}
             style={{ marginTop: '0.5rem' }}
           >
-            {loading ? 'Processing…' : isSignUp ? 'Create Account' : 'Sign In'}
+            {loading ? t('auth.processing') : isSignUp ? t('auth.submitSignup') : t('auth.submitLogin')}
           </button>
         </form>
 
@@ -168,7 +170,7 @@ export default function StudentAuthClient() {
           textAlign: 'center',
         }}>
           <p style={{ margin: '0 0 1rem 0', color: '#666' }}>
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+            {isSignUp ? t('auth.alreadyHaveAccount') : t('auth.noAccount')}
           </p>
           <button
             type="button"
@@ -180,14 +182,14 @@ export default function StudentAuthClient() {
             }}
             className="button button-secondary"
           >
-            {isSignUp ? 'Sign In Instead' : 'Create Account Instead'}
+            {isSignUp ? t('auth.signInInstead') : t('auth.createAccountInstead')}
           </button>
         </div>
 
         <div style={{ marginTop: '2rem', textAlign: 'center', color: '#999', fontSize: '0.85rem' }}>
           <p>
             <Link href="/" style={{ color: '#0755ff', textDecoration: 'none' }}>
-              ← Back to Home
+              {t('common.backToHome')}
             </Link>
           </p>
         </div>

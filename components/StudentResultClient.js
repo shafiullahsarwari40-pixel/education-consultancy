@@ -3,22 +3,24 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '../lib/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
 
 const statusSteps = [
-  { value: 'submitted', label: 'Application Submitted', color: '#0755ff' },
-  { value: 'evaluating', label: 'Documents Are Being Evaluated', color: '#0755ff' },
-  { value: 'accepted', label: 'Final Decision - Accepted', color: '#0755ff' },
+  { value: 'submitted', labelKey: 'studentResult.statusSubmitted', color: '#0755ff' },
+  { value: 'evaluating', labelKey: 'studentResult.statusEvaluating', color: '#0755ff' },
+  { value: 'accepted', labelKey: 'studentResult.statusAccepted', color: '#0755ff' },
 ];
 
-const statusMessages = {
-  submitted: 'Your application has been received successfully. Our team will start reviewing your documents soon.',
-  evaluating: 'Your documents are currently being evaluated by our team. We will update your result as soon as possible.',
-  accepted: 'Congratulations! Your application has been accepted. You can download your acceptance letter below.',
-  accepted_pending_letter: 'Congratulations! Your application has been accepted. Your acceptance letter will be uploaded soon.',
+const statusMessageKeys = {
+  submitted: 'studentResult.statusMessageSubmitted',
+  evaluating: 'studentResult.statusMessageEvaluating',
+  accepted: 'studentResult.statusMessageAccepted',
+  accepted_pending_letter: 'studentResult.statusMessageAcceptedPendingLetter',
 };
 
 export default function StudentResultClient() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,7 @@ export default function StudentResultClient() {
 
   useEffect(() => {
     if (!supabase) {
-      setError('Supabase client not configured');
+      setError(t('studentResult.errorSupabaseNotConfigured'));
       setLoading(false);
       return;
     }
@@ -46,12 +48,12 @@ export default function StudentResultClient() {
         await fetchApplication(currentSession.access_token);
       } catch (err) {
         console.error('Session check error:', err);
-        setError('Failed to verify session');
+        setError(t('studentResult.errorFailedVerifySession'));
       } finally {
         setLoading(false);
       }
     })();
-  }, [router]);
+  }, [router, t]);
 
   async function fetchApplication(token) {
     try {
@@ -61,14 +63,14 @@ export default function StudentResultClient() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to fetch application');
+        throw new Error(data.error || t('studentResult.errorFetchApplication'));
       }
 
       const data = await res.json();
       setApplication(data.application || null);
     } catch (err) {
       console.error('Fetch application error:', err);
-      setError(err.message);
+      setError(err.message || t('studentResult.errorUnknown'));
     }
   }
 
@@ -82,7 +84,7 @@ export default function StudentResultClient() {
     return (
       <main className="section" style={{ minHeight: '80vh' }}>
         <div className="container" style={{ textAlign: 'center', paddingTop: '2rem' }}>
-          <p>Loading your application status...</p>
+          <p>{t('studentResult.loadingStatus')}</p>
         </div>
       </main>
     );
@@ -106,10 +108,10 @@ export default function StudentResultClient() {
             className="button button-secondary"
             style={{ marginRight: '1rem' }}
           >
-            Sign Out
+            {t('common.signOut')}
           </button>
           <Link href="/" className="button button-secondary">
-            Back to Home
+            {t('common.backToHome')}
           </Link>
         </div>
       </main>
@@ -127,19 +129,19 @@ export default function StudentResultClient() {
             textAlign: 'center',
             marginBottom: '2rem',
           }}>
-            <h2 style={{ marginTop: 0 }}>You have not submitted an application yet</h2>
+            <h2 style={{ marginTop: 0 }}>{t('studentResult.noApplicationTitle')}</h2>
             <p style={{ color: '#666', marginBottom: '1.5rem' }}>
-              Get started with your Turkish university application now.
+              {t('studentResult.noApplicationDescription')}
             </p>
             <Link href="/apply" className="button button-primary button-large">
-              Start Application
+              {t('studentResult.startApplication')}
             </Link>
             <button
               onClick={handleSignOut}
               className="button button-secondary button-large"
               style={{ marginTop: '1rem' }}
             >
-              Sign Out
+              {t('common.signOut')}
             </button>
           </div>
         </div>
@@ -151,7 +153,7 @@ export default function StudentResultClient() {
   const currentStepIndex = displaySteps.findIndex((step) => step.value === application.application_status);
   const hasAcceptanceLetter = application.application_status === 'accepted' && application.acceptance_letter_url;
   const customMessage = application.rejection_message || application.admin_note;
-  const displayMessage = customMessage || statusMessages[application.application_status] || '';
+  const displayMessage = customMessage || t(statusMessageKeys[application.application_status] || '');
 
   return (
     <main className="section" style={{ minHeight: '80vh' }}>
@@ -165,16 +167,16 @@ export default function StudentResultClient() {
           gap: '1rem',
         }}>
           <div>
-            <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem' }}>Your Application</h1>
+            <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem' }}>{t('studentResult.yourApplicationTitle')}</h1>
             <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
-              Logged in as <strong>{session?.user?.email}</strong>
+              {t('common.loggedInAs')} <strong>{session?.user?.email}</strong>
             </p>
           </div>
           <button
             onClick={handleSignOut}
             className="button button-secondary"
           >
-            Sign Out
+            {t('common.signOut')}
           </button>
         </div>
 
@@ -186,35 +188,35 @@ export default function StudentResultClient() {
           borderRadius: '1rem',
           marginBottom: '2rem',
         }}>
-          <h2 style={{ marginTop: 0, fontSize: '1.1rem' }}>Application Details</h2>
+          <h2 style={{ marginTop: 0, fontSize: '1.1rem' }}>{t('studentResult.applicationDetailsTitle')}</h2>
           <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
             <div>
               <p style={{ margin: '0 0 0.25rem 0', color: '#999', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 600 }}>
-                Full Name
+                {t('studentResult.labelFullName')}
               </p>
               <p style={{ margin: 0, fontWeight: 600 }}>{application.full_name}</p>
             </div>
             <div>
               <p style={{ margin: '0 0 0.25rem 0', color: '#999', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 600 }}>
-                Email
+                {t('studentResult.labelEmail')}
               </p>
               <p style={{ margin: 0 }}>{application.email}</p>
             </div>
             <div>
               <p style={{ margin: '0 0 0.25rem 0', color: '#999', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 600 }}>
-                University
+                {t('studentResult.labelUniversity')}
               </p>
               <p style={{ margin: 0 }}>{application.university || '—'}</p>
             </div>
             <div>
               <p style={{ margin: '0 0 0.25rem 0', color: '#999', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 600 }}>
-                Program
+                {t('studentResult.labelProgram')}
               </p>
               <p style={{ margin: 0 }}>{application.program || '—'}</p>
             </div>
             <div>
               <p style={{ margin: '0 0 0.25rem 0', color: '#999', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 600 }}>
-                Submitted Date
+                {t('studentResult.submittedDateLabel')}
               </p>
               <p style={{ margin: 0 }}>
                 {new Date(application.created_at).toLocaleDateString()}
@@ -225,7 +227,7 @@ export default function StudentResultClient() {
 
         {/* Status Steps */}
         <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ marginBottom: '1.5rem' }}>Application Status</h2>
+          <h2 style={{ marginBottom: '1.5rem' }}>{t('studentResult.applicationStatusTitle')}</h2>
           <div style={{ display: 'grid', gap: '1rem' }}>
             {displaySteps.map((step, index) => {
               const isCurrent = index === currentStepIndex;
@@ -262,10 +264,10 @@ export default function StudentResultClient() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1rem' }}>
-                      {step.label}
+                      {t(step.labelKey)}
                     </h3>
                     <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
-                      {isCurrent ? 'Current step' : isCompleted ? 'Completed' : 'Pending'}
+                      {isCurrent ? t('studentResult.statusCurrentStep') : isCompleted ? t('studentResult.statusCompleted') : t('studentResult.statusPending')}
                     </p>
                   </div>
                 </div>
@@ -302,7 +304,7 @@ export default function StudentResultClient() {
             border: '1px solid #dde4ee',
             marginBottom: '2rem',
           }}>
-            <h3 style={{ marginTop: 0 }}>Acceptance Letter</h3>
+            <h3 style={{ marginTop: 0 }}>{t('studentResult.acceptanceLetterTitle')}</h3>
             {hasAcceptanceLetter ? (
               <button
                 onClick={() => {
@@ -310,7 +312,7 @@ export default function StudentResultClient() {
                     headers: { Authorization: `Bearer ${session?.access_token}` },
                   })
                     .then(res => {
-                      if (!res.ok) throw new Error('Download failed');
+                      if (!res.ok) throw new Error(t('studentResult.downloadError'));
                       return res.blob();
                     })
                     .then(blob => {
@@ -323,15 +325,15 @@ export default function StudentResultClient() {
                       window.URL.revokeObjectURL(url);
                       document.body.removeChild(a);
                     })
-                    .catch(err => alert(`Error: ${err.message}`));
+                    .catch(err => alert(`${t('studentResult.downloadErrorPrefix')} ${err.message}`));
                 }}
                 className="button button-primary"
               >
-                ↓ Download Acceptance Letter
+                {t('studentResult.downloadAcceptanceLetter')}
               </button>
             ) : (
               <p style={{ margin: 0, color: '#666' }}>
-                Your acceptance letter will be available for download shortly. Please check back soon.
+                {t('studentResult.acceptanceLetterPending')}
               </p>
             )}
           </div>
@@ -345,15 +347,15 @@ export default function StudentResultClient() {
           textAlign: 'center',
         }}>
           <p style={{ margin: '0 0 1rem 0', color: '#666' }}>
-            Have questions about your application?
+            {t('studentResult.questionNeedHelp')}
           </p>
           <p style={{ margin: 0, fontSize: '0.9rem' }}>
             <Link href="/" style={{ color: '#0755ff', textDecoration: 'none' }}>
-              Contact us on our website
+              {t('studentResult.contactUsWebsite')}
             </Link>
-            {' or check out our '}
+            {' '}{t('studentResult.or')} {' '}
             <Link href="/privacy" style={{ color: '#0755ff', textDecoration: 'none' }}>
-              FAQs
+              {t('studentResult.faqs')}
             </Link>
           </p>
         </div>

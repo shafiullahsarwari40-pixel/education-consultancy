@@ -3,7 +3,6 @@ import path from 'path';
 import './globals.css';
 import '../styles_new.css';
 import { LanguageProvider } from '../lib/LanguageContext';
-import FloatingLanguageChanger from '../components/FloatingLanguageChanger';
 
 function getPublicEnv() {
   const env = {
@@ -111,7 +110,6 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <LanguageProvider>
-          <FloatingLanguageChanger />
           {children}
         </LanguageProvider>
       </body>

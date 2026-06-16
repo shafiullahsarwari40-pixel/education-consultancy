@@ -418,20 +418,20 @@ export default function ApplicationForm() {
   }
 
   if (authLoading) {
-    return <div>Loading authentication status…</div>;
+    return <div>{t('form.loadingAuthStatus')}</div>;
   }
 
   if (!session) {
     return (
       <div className="application-login-prompt" style={{ padding: '2rem', border: '1px solid #ddd', borderRadius: '1rem', background: '#fafafa' }}>
-        <h2>Student login required</h2>
-        <p>Please sign in or create an account to submit your application and track its status.</p>
+        <h2>{t('form.loginRequiredTitle')}</h2>
+        <p>{t('form.loginRequiredDescription')}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: 360 }}>
           <Link href="/student/login" className="button button-primary button-large">
-            Student Login
+            {t('form.studentLogin')}
           </Link>
           <Link href="/student/signup" className="button button-secondary button-large">
-            Create Student Account
+            {t('form.createStudentAccount')}
           </Link>
         </div>
       </div>
@@ -441,9 +441,9 @@ export default function ApplicationForm() {
   return (
     <>
       <div style={{ marginBottom: '1rem', padding: '1rem', background: '#f5f8ff', borderRadius: '0.75rem' }}>
-        <p style={{ margin: 0 }}>Signed in as <strong>{session.user.email}</strong></p>
+        <p style={{ margin: 0 }}>{t('form.signedInAs')} <strong>{session.user.email}</strong></p>
         <p style={{ margin: '0.5rem 0 0 0' }}>
-          After submission, you can track your application from <Link href="/student/dashboard">your student dashboard</Link>.
+          {t('form.afterSubmissionInfo')} <Link href="/student/dashboard">{t('form.yourStudentDashboard')}</Link>.
         </p>
       </div>
       <form className="form-grid application-form" onSubmit={handleSubmit}>
@@ -451,14 +451,14 @@ export default function ApplicationForm() {
 
         <div>
           <label className="form-label">
-            Full Name <span className="form-required">*</span>
+            {t('form.firstName')} <span className="form-required">*</span>
           </label>
           <input
             name="full_name"
             type="text"
             value={formState.full_name}
             onChange={handleChange}
-            placeholder="Your full name"
+            placeholder={t('form.firstNamePlaceholder')}
             className="form-input"
             required
           />
@@ -473,7 +473,7 @@ export default function ApplicationForm() {
             type="email"
             value={formState.email}
             onChange={handleChange}
-            placeholder="you@example.com"
+            placeholder={t('form.emailPlaceholder')}
             className="form-input"
             required
           />
@@ -488,44 +488,44 @@ export default function ApplicationForm() {
             type="tel"
             value={formState.phone}
             onChange={handleChange}
-            placeholder="+90 5XX XXX XXXX"
+            placeholder={t('form.phonePlaceholder')}
             className="form-input"
             required
           />
         </div>
 
         <div>
-          <label className="form-label">Mother Name</label>
+          <label className="form-label">{t('form.motherName')}</label>
           <input
             name="mother_name"
             type="text"
             value={formState.mother_name}
             onChange={handleChange}
-            placeholder="Mother's name"
+            placeholder={t('form.motherNamePlaceholder')}
             className="form-input"
           />
         </div>
 
         <div>
-          <label className="form-label">Father Name</label>
+          <label className="form-label">{t('form.fatherName')}</label>
           <input
             name="father_name"
             type="text"
             value={formState.father_name}
             onChange={handleChange}
-            placeholder="Father's name"
+            placeholder={t('form.fatherNamePlaceholder')}
             className="form-input"
           />
         </div>
 
         <div className="full-row">
-          <label className="form-label">Full Address</label>
+          <label className="form-label">{t('form.address')}</label>
           <textarea
             name="address"
             rows="3"
             value={formState.address}
             onChange={handleChange}
-            placeholder="Enter your full address"
+            placeholder={t('form.addressPlaceholder')}
             className="form-textarea"
           />
         </div>
@@ -536,7 +536,7 @@ export default function ApplicationForm() {
             <input
               type="text"
               name="country"
-              placeholder="Search country..."
+              placeholder={t('form.searchCountryPlaceholder')}
               value={countrySearch}
               onChange={(e) => {
                 const value = e.target.value;
@@ -561,7 +561,7 @@ export default function ApplicationForm() {
                     </div>
                   ))
                 ) : (
-                  <div className="dropdown-item disabled">No countries found</div>
+                  <div className="dropdown-item disabled">{t('form.noCountriesFound')}</div>
                 )}
               </div>
             )}
@@ -574,7 +574,7 @@ export default function ApplicationForm() {
             <input
               type="text"
               name="program"
-              placeholder="Search program..."
+              placeholder={t('form.searchProgramPlaceholder')}
               value={programSearch}
               onChange={(e) => {
                 const value = e.target.value;
@@ -599,7 +599,7 @@ export default function ApplicationForm() {
                     </div>
                   ))
                 ) : (
-                  <div className="dropdown-item disabled">No programs found</div>
+                  <div className="dropdown-item disabled">{t('form.noProgramsFound')}</div>
                 )}
               </div>
             )}
@@ -637,7 +637,7 @@ export default function ApplicationForm() {
                     </div>
                   ))
                 ) : (
-                  <div className="dropdown-item disabled">No faculties found</div>
+                  <div className="dropdown-item disabled">{t('form.noFacultiesFound')}</div>
                 )}
               </div>
             )}
@@ -651,7 +651,7 @@ export default function ApplicationForm() {
             type="text"
             value={formState.university}
             onChange={handleChange}
-            placeholder="Selected university"
+            placeholder={t('form.universityPlaceholder')}
             className="form-input"
           />
         </div>
@@ -663,7 +663,7 @@ export default function ApplicationForm() {
             rows="4"
             value={formState.message}
             onChange={handleChange}
-            placeholder="Tell us more about your application"
+            placeholder={t('form.messagePlaceholder')}
             className="form-textarea"
           />
         </div>
@@ -676,8 +676,8 @@ export default function ApplicationForm() {
               { key: 'transcript', labelKey: 'form.transcript' },
               { key: 'diploma', labelKey: 'form.diploma' },
               { key: 'exam_sheet', labelKey: 'form.examSheet' },
-              { key: 'id_card', labelText: 'ID Card / Tazkira' },
-              { key: 'photo', labelText: 'Personal Photo' },
+              { key: 'id_card', labelText: t('form.idCard') },
+              { key: 'photo', labelText: t('form.photo') },
             ].map(({ key, labelKey, labelText }) => {
               const selected = Boolean(formState[key]);
               return (

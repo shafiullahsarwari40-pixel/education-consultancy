@@ -38,9 +38,8 @@ const SocialIcon = ({ name, href, label }) => {
 };
 
 export default function Navbar() {
-  const { language, changeLanguage, t } = useLanguage();
+  const { language, t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [langOpen, setLangOpen] = useState(false);
 
   const isRTL = language === 'da' || language === 'ps';
 
@@ -60,19 +59,10 @@ export default function Navbar() {
     { href: '#programs', label: t('nav.programs') },
     { href: '#contact', label: t('nav.contact') },
     { href: '/student/result', label: t('nav.seeResult') },
-    { href: '/admin/login', label: 'Admin' },
+    { href: '/admin/login', label: t('nav.admin') },
   ];
 
-  const langNames = { en: 'English', tr: 'Türkçe', da: 'دری', ps: 'پښتو' };
-
   function closeAll() {
-    setMobileOpen(false);
-    setLangOpen(false);
-  }
-
-  function changeLang(l) {
-    changeLanguage(l);
-    setLangOpen(false);
     setMobileOpen(false);
   }
 
@@ -84,10 +74,10 @@ export default function Navbar() {
           <Image
             src="/images/logo.png"
             alt="Horizon logo"
-            width={150}
-            height={36}
+            width={220}
+            height={54}
             style={{ objectFit: 'contain', background: 'transparent' }}
-            sizes="(max-width: 767px) 120px, 150px"
+            sizes="(max-width: 767px) 160px, 220px"
             priority
           />
         </Link>
@@ -101,7 +91,7 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* RIGHT: Social + Language + Button */}
+        {/* RIGHT: Social + Button */}
         <div className="navbar-right">
           <div className="navbar-social">
             <SocialIcon name="instagram" href="https://www.instagram.com/heceducons" label="Instagram" />
@@ -109,28 +99,14 @@ export default function Navbar() {
             <SocialIcon name="whatsapp" href="https://whatsapp.com/channel/0029VbClkJs5q08dSxjVU32R" label="WhatsApp" />
           </div>
 
-          <div className="language-switcher desktop">
-            <button className="lang-toggle" onClick={() => setLangOpen((s) => !s)} aria-expanded={langOpen} aria-label="Language">
-              {langNames[language]}
-            </button>
-            {langOpen && (
-              <div className="lang-dropdown">
-                <button onClick={() => changeLang('en')}>English</button>
-                <button onClick={() => changeLang('tr')}>Türkçe</button>
-                <button onClick={() => changeLang('da')}>دری</button>
-                <button onClick={() => changeLang('ps')}>پښتو</button>
-              </div>
-            )}
-          </div>
-
-          <a href="#application-timeline" className="button button-primary button-small desktop" onClick={closeAll}>
-            {t('nav.apply')}
+          <a href="/apply" className="button button-primary button-small desktop" onClick={closeAll}>
+            {t('hero.applyBtn')}
           </a>
 
           <button
             className={`menu-toggle mobile ${mobileOpen ? 'open' : ''}`}
             onClick={() => setMobileOpen((s) => !s)}
-            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-label={mobileOpen ? t('common.closeMenu') : t('common.openMenu')}
           >
             {mobileOpen ? '×' : '☰'}
           </button>
@@ -141,7 +117,7 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="mobile-menu">
           <div className="mobile-panel">
-            <button className="menu-close" onClick={closeAll} aria-label="Close menu">×</button>
+            <button className="menu-close" onClick={closeAll} aria-label={t('common.closeMenu')}>×</button>
             <nav className="mobile-nav-links">
               {navItems.map((item) => (
                 <a key={item.href} href={item.href} onClick={closeAll}>{item.label}</a>
@@ -152,13 +128,7 @@ export default function Navbar() {
               <SocialIcon name="facebook" href="https://www.facebook.com/profile.php?id=61590645456268" label="Facebook" />
               <SocialIcon name="whatsapp" href="https://whatsapp.com/channel/0029VbClkJs5q08dSxjVU32R" label="WhatsApp" />
             </div>
-            <div className="mobile-language">
-              <button onClick={() => changeLang('en')}>English</button>
-              <button onClick={() => changeLang('tr')}>Türkçe</button>
-              <button onClick={() => changeLang('da')}>دری</button>
-              <button onClick={() => changeLang('ps')}>پښتو</button>
-            </div>
-            <a href="#application-timeline" className="button button-primary button-large mobile-apply" onClick={closeAll}>{t('nav.apply')}</a>
+            <a href="/apply" className="button button-primary button-large mobile-apply" onClick={closeAll}>{t('hero.applyBtn')}</a>
           </div>
         </div>
       )}

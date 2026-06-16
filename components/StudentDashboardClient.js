@@ -28,7 +28,7 @@ export default function StudentDashboardClient() {
   useEffect(() => {
     (async () => {
       if (!supabase) {
-        setError('Supabase client not configured');
+        setError(t('studentDashboard.errorSupabaseNotConfigured'));
         setLoading(false);
         return;
       }
@@ -58,7 +58,7 @@ export default function StudentDashboardClient() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Unable to fetch your application');
+        throw new Error(data.error || t('studentDashboard.errorUnableFetchApplication'));
       }
 
       const data = await res.json();
@@ -68,14 +68,14 @@ export default function StudentDashboardClient() {
         setApplication(data.application);
       }
     } catch (err) {
-      setError(err.message || 'Failed to load application');
+      setError(err.message || t('studentDashboard.errorFailedLoadApplication'));
     } finally {
       setLoading(false);
     }
   }
 
   if (loading) {
-    return <div>{t('studentDashboard.title')}…</div>;
+    return <div>{t('common.loading')}</div>;
   }
 
   if (error) {
@@ -83,7 +83,7 @@ export default function StudentDashboardClient() {
       <div style={{ color: 'crimson', padding: '1rem', background: '#fff0f0', borderRadius: 12 }}>
         <p>{error}</p>
         <button className="button button-secondary" style={{ marginTop: '1rem' }} onClick={handleSignOut}>
-          Sign Out
+          {t('common.signOut')}
         </button>
       </div>
     );
@@ -98,7 +98,7 @@ export default function StudentDashboardClient() {
             <p>{t('studentDashboard.startApplication')}</p>
           </div>
           <button className="button button-secondary" onClick={handleSignOut}>
-            Sign Out
+            {t('common.signOut')}
           </button>
         </div>
         <button className="button button-primary button-large" onClick={() => router.push('/apply')}>
@@ -114,21 +114,21 @@ export default function StudentDashboardClient() {
     <div style={{ padding: '2rem', background: '#f7f9fc', borderRadius: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
         <div>
-          <p style={{ margin: 0, color: '#555' }}>Welcome back,</p>
+          <p style={{ margin: 0, color: '#555' }}>{t('studentDashboard.welcomeBack')}</p>
           <h1 style={{ margin: '0.5rem 0 0 0' }}>{application.full_name}</h1>
           <p style={{ margin: '0.5rem 0 0 0', color: '#777' }}>
-            Application for <strong>{application.program || '—'}</strong> at <strong>{application.university || '—'}</strong>
+            {t('studentDashboard.applicationFor')} <strong>{application.program || '—'}</strong> {t('studentDashboard.at')} <strong>{application.university || '—'}</strong>
           </p>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <p style={{ margin: 0, color: '#777' }}>Submitted</p>
+          <p style={{ margin: 0, color: '#777' }}>{t('studentDashboard.submitted')}</p>
           <strong>{new Date(application.created_at).toLocaleDateString()}</strong>
           <button
             className="button button-secondary"
             style={{ marginTop: '1rem', display: 'inline-flex' }}
             onClick={handleSignOut}
           >
-            Sign Out
+            {t('common.signOut')}
           </button>
         </div>
       </div>
@@ -163,42 +163,42 @@ export default function StudentDashboardClient() {
                   {index + 1}
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1rem' }}>{stepLabel}</h3>
-                  <p style={{ margin: '0.35rem 0 0 0', color: '#555' }}>
-                    {isActive ? (index === currentStepIndex ? 'Current step' : 'Completed') : 'Pending'}
-                  </p>
+                    <h3 style={{ margin: 0, fontSize: '1rem' }}>{step.label}</h3>
+                    <p style={{ margin: '0.35rem 0 0 0', color: '#555' }}>
+                      {isActive ? (index === currentStepIndex ? t('studentResult.statusCurrentStep') : t('studentResult.statusCompleted')) : t('studentResult.statusPending')}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div style={{ marginTop: '2rem', display: 'grid', gap: '1rem' }}>
-        <div style={{ padding: '1rem', borderRadius: 14, background: '#fff', border: '1px solid #dde4ee' }}>
-          <h2 style={{ marginTop: 0 }}>Application Details</h2>
-          <dl style={{ display: 'grid', gap: '0.75rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <dt style={{ fontWeight: 600 }}>Email</dt>
-              <dd>{application.email}</dd>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <dt style={{ fontWeight: 600 }}>Phone</dt>
-              <dd>{application.phone}</dd>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <dt style={{ fontWeight: 600 }}>Country</dt>
-              <dd>{application.country || '—'}</dd>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <dt style={{ fontWeight: 600 }}>Status</dt>
-              <dd style={{ textTransform: 'capitalize' }}>{application.application_status || 'submitted'}</dd>
-            </div>
-          </dl>
+            );
+          })}
         </div>
 
+        <div style={{ marginTop: '2rem', display: 'grid', gap: '1rem' }}>
+          <div style={{ padding: '1rem', borderRadius: 14, background: '#fff', border: '1px solid #dde4ee' }}>
+            <h2 style={{ marginTop: 0 }}>{t('studentDashboard.applicationDetailsTitle')}</h2>
+            <dl style={{ display: 'grid', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <dt style={{ fontWeight: 600 }}>{t('studentDashboard.labelEmail')}</dt>
+                <dd>{application.email}</dd>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <dt style={{ fontWeight: 600 }}>{t('studentDashboard.labelPhone')}</dt>
+                <dd>{application.phone}</dd>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <dt style={{ fontWeight: 600 }}>{t('studentDashboard.labelCountry')}</dt>
+                <dd>{application.country || '—'}</dd>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <dt style={{ fontWeight: 600 }}>{t('studentDashboard.labelStatus')}</dt>
+                <dd style={{ textTransform: 'capitalize' }}>{application.application_status || 'submitted'}</dd>
+              </div>
+            </dl>
+          </div>
+
         <div style={{ padding: '1rem', borderRadius: 14, background: '#fff', border: '1px solid #dde4ee' }}>
-          <h2 style={{ marginTop: 0 }}>Acceptance Letter</h2>
+          <h2 style={{ marginTop: 0 }}>{t('studentDashboard.acceptanceLetterTitle')}</h2>
           {application.acceptance_letter_path ? (
             <a
               href="/api/student/acceptance-letter"
@@ -207,10 +207,10 @@ export default function StudentDashboardClient() {
               className="button button-primary button-large"
               style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}
             >
-              Download Acceptance Letter
+              {t('studentDashboard.downloadAcceptanceLetter')}
             </a>
           ) : (
-            <p style={{ margin: 0, color: '#555' }}>Acceptance letter not available yet.</p>
+            <p style={{ margin: 0, color: '#555' }}>{t('studentDashboard.acceptanceLetterUnavailable')}</p>
           )}
         </div>
       </div>
