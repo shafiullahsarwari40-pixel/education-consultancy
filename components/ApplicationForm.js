@@ -373,16 +373,18 @@ export default function ApplicationForm() {
         body: formData,
       });
 
+      const text = await res.text();
       let result;
-      try {
-        result = await res.json();
-      } catch (jsonError) {
-        const text = await res.text();
-            const normalized = text.replace(/\s+/g, ' ').trim();
-            if (/request entity too large|413/i.test(normalized)) {
-              throw new Error('Upload is too large. Please reduce attachment sizes and try again.');
-            }
-        throw new Error(text || 'Unexpected server response');
+      if (text) {
+        try {
+          result = JSON.parse(text);
+        } catch (jsonError) {
+          const normalized = text.replace(/\s+/g, ' ').trim();
+          if (/request entity too large|413/i.test(normalized)) {
+            throw new Error('Upload is too large. Please reduce attachment sizes and try again.');
+          }
+          throw new Error(text || 'Unexpected server response');
+        }
       }
 
       if (!res.ok) {
