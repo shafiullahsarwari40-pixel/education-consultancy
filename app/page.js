@@ -13,6 +13,7 @@ import Footer from '../components/Footer';
 import WhatsAppButton from '../components/WhatsAppButton';
 import NextSectionButton from '../components/NextSectionButton';
 import WhyChooseHorizon from '../components/WhyChooseHorizon';
+import HomepageMediaShowcase from '../components/HomepageMediaShowcase';
 import FAQSection from '../components/FAQSection';
 import SocialProof from '../components/SocialProof';
 import StudentDashboard from '../components/StudentDashboard';
@@ -24,6 +25,7 @@ export default function Home() {
       <Navbar />
       <main>
         <Hero />
+        <HomepageMediaShowcase />
         <About />
         <Services />
         <WhyTurkey />

@@ -116,6 +116,28 @@ ON admin_notifications(read);
 CREATE INDEX IF NOT EXISTS idx_admin_notifications_created_at
 ON admin_notifications(created_at DESC);
 
+CREATE TABLE IF NOT EXISTS homepage_media (
+  id bigserial PRIMARY KEY,
+  media_type text NOT NULL CHECK (media_type IN ('image', 'video')),
+  media_url text NOT NULL,
+  media_path text,
+  thumbnail_url text,
+  title text,
+  description text,
+  button_text text,
+  button_link text,
+  is_published boolean NOT NULL DEFAULT false,
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_homepage_media_order
+ON homepage_media(sort_order);
+
+CREATE INDEX IF NOT EXISTS idx_homepage_media_published
+ON homepage_media(is_published);
+
 -- Step 9: Enable RLS on profiles table
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 

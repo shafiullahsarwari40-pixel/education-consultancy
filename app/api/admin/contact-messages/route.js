@@ -14,13 +14,13 @@ async function requireAdmin(request) {
     .from('profiles')
     .select('role')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   if (profileErr) {
     return { ok: false, status: 500, body: { error: 'Admin lookup failed' } };
   }
 
-  if (profile?.role !== 'admin') {
+  if (!profile || profile.role !== 'admin') {
     return { ok: false, status: 403, body: { error: `Forbidden: admin only (no admin role for ${user.email})` } };
   }
 

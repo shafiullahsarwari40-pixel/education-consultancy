@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 import Link from 'next/link';
@@ -18,21 +18,33 @@ export default function AdminDashboard() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('desc');
+  const redirectingRef = useRef(false);
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getSession();
       const s = data?.session ?? null;
-      if (!s) return router.push('/admin/login');
-      
-      // Verify user has admin role
+      if (!s) {
+        if (!redirectingRef.current) {
+          redirectingRef.current = true;
+          router.replace('/admin/login');
+        }
+        setLoading(false);
+        return;
+      }
+
       const verifyRes = await fetch('/api/admin/applications', { headers: { Authorization: `Bearer ${s.access_token}` } });
-      if (verifyRes.status === 403) {
+      if (verifyRes.status === 403 || verifyRes.status === 401) {
         await supabase.auth.signOut();
         setError('Access denied: You do not have admin permissions.');
-        return router.push('/admin/login');
+        if (!redirectingRef.current) {
+          redirectingRef.current = true;
+          router.replace('/admin/login');
+        }
+        setLoading(false);
+        return;
       }
-      
+
       setSession(s);
       try {
         await Promise.allSettled([
@@ -64,7 +76,10 @@ export default function AdminDashboard() {
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
           await supabase.auth.signOut();
-          router.replace('/admin/login');
+          if (!redirectingRef.current) {
+            redirectingRef.current = true;
+            router.replace('/admin/login');
+          }
           return;
         }
         const body = await res.json().catch(() => ({ error: 'Unable to fetch contact messages' }));
@@ -92,7 +107,10 @@ export default function AdminDashboard() {
       setLoading(false);
       if (res.status === 401 || res.status === 403) {
         await supabase.auth.signOut();
-        router.replace('/admin/login');
+        if (!redirectingRef.current) {
+          redirectingRef.current = true;
+          router.replace('/admin/login');
+        }
         return;
       }
       const err = await res.json().catch(() => ({ error: 'Unknown error' }));
@@ -114,7 +132,10 @@ export default function AdminDashboard() {
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
           await supabase.auth.signOut();
-          router.replace('/admin/login');
+          if (!redirectingRef.current) {
+            redirectingRef.current = true;
+            router.replace('/admin/login');
+          }
           return;
         }
         const body = await res.json().catch(() => ({ error: 'Unable to fetch notifications' }));
@@ -192,7 +213,8 @@ export default function AdminDashboard() {
             🔔 {unreadCount > 0 ? `${unreadCount} new` : 'No new'}
           </button>
         </div>
-        <div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Link href="/admin/homepage-media" style={{ color: '#1e5a96', fontWeight: 600 }}>Homepage Media</Link>
           <Link href="/">Home</Link>
         </div>
       </header>

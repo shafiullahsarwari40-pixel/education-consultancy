@@ -34,9 +34,17 @@ export async function PATCH(request, { params }) {
       .from('profiles')
       .select('role')
       .eq('id', userData.user.id)
-      .single();
+      .maybeSingle();
 
-    if (profileError || profile?.role !== 'admin') {
+    if (profileError) {
+      console.error('Admin profile lookup error:', profileError);
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    if (!profile || profile.role !== 'admin') {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }
