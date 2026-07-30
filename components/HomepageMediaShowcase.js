@@ -30,7 +30,6 @@ export default function HomepageMediaShowcase() {
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
   const [hoverPaused, setHoverPaused] = useState(false);
 
   useEffect(() => {
@@ -55,18 +54,14 @@ export default function HomepageMediaShowcase() {
 
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const updateReducedMotion = () => setReducedMotion(mediaQuery.matches);
-    const updateViewport = () => setIsMobileView(window.innerWidth < 768);
 
     updateReducedMotion();
-    updateViewport();
 
     mediaQuery.addEventListener('change', updateReducedMotion);
-    window.addEventListener('resize', updateViewport);
 
     return () => {
       mounted = false;
       mediaQuery.removeEventListener('change', updateReducedMotion);
-      window.removeEventListener('resize', updateViewport);
     };
   }, []);
 
@@ -128,7 +123,7 @@ export default function HomepageMediaShowcase() {
     return [...items, ...items];
   }, [items]);
 
-  const shouldAnimate = !reducedMotion && !isMobileView && items.length > 1 && !hoverPaused;
+  const shouldAnimate = !reducedMotion && items.length > 1 && !hoverPaused;
 
   if (loading) {
     return null;

@@ -437,15 +437,20 @@ p {
 
 @media (max-width: 660px) {
   .homepage-media-viewport {
-    overflow-x: auto;
+    overflow: hidden;
+  }
+
+  .homepage-media-track {
+    will-change: transform;
   }
 
   .homepage-media-track.is-animating {
-    animation: none;
+    animation: homepage-media-slide 24s linear infinite;
   }
 
   .homepage-media-card {
-    width: min(280px, 100%);
+    flex: 0 0 min(260px, 84vw);
+    width: min(260px, 84vw);
   }
 }
 
