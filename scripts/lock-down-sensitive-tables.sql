@@ -4,6 +4,26 @@
 -- inside authenticated API routes; browsers do not need table access.
 BEGIN;
 
+-- Older production projects may predate the admin notification feed. Create
+-- the table before applying the same server-only permissions as the other
+-- sensitive application tables. These statements are safe to rerun.
+CREATE TABLE IF NOT EXISTS public.admin_notifications (
+  id bigserial PRIMARY KEY,
+  application_id uuid REFERENCES public.applications(id) ON DELETE CASCADE,
+  student_name text NOT NULL,
+  student_email text NOT NULL,
+  program text,
+  university text,
+  read boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_notifications_read
+ON public.admin_notifications(read);
+
+CREATE INDEX IF NOT EXISTS idx_admin_notifications_created_at
+ON public.admin_notifications(created_at DESC);
+
 DO $migration$
 DECLARE
   table_name text;
