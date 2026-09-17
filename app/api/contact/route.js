@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import nodemailer from 'nodemailer';
+import { RequestError, readJson, textField, emailField, rateLimit, requestAddress } from '../_lib/request';
 
 const ADMIN_EMAIL = process.env.CONTACT_NOTIFICATION_EMAIL || 'horizon@horizon-edu.net';
 const EMAIL_HOST = process.env.EMAIL_HOST || '';
@@ -18,6 +19,9 @@ async function sendNotificationEmail({ name, email, subject, message }) {
     host: EMAIL_HOST,
     port: EMAIL_PORT,
     secure: EMAIL_PORT === 465,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
     auth: {
       user: EMAIL_USER,
       pass: EMAIL_PASSWORD,
@@ -39,21 +43,24 @@ Reply to: ${email}`;
     from: `${EMAIL_USER}`,
     to: ADMIN_EMAIL,
     subject: mailSubject,
+    replyTo: email,
     text: mailBody,
   });
 }
 
 export async function POST(request) {
-  if (!supabaseAdmin) {
-    return NextResponse.json({ error: 'Server Supabase client not configured' }, { status: 500 });
+  if (!rateLimit(`contact:${requestAddress(request)}`, 5)) {
+    return NextResponse.json({ error: 'Please wait a minute before sending another message.' }, { status: 429, headers: { 'Retry-After': '60' } });
   }
 
   try {
-    const body = await request.json();
-    const { name, email, subject, message } = body;
-
-    if (!name || !email || !message) {
-      return NextResponse.json({ error: 'Name, email, and message are required.' }, { status: 400 });
+    const body = await readJson(request);
+    const name = textField(body.name, 'Name', 120, true);
+    const email = emailField(body.email);
+    const subject = textField(body.subject, 'Subject', 200);
+    const message = textField(body.message, 'Message', 5000, true);
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: 'Contact service is temporarily unavailable. Please email horizon@horizon-edu.net.' }, { status: 503 });
     }
 
     const { error } = await supabaseAdmin.from('contact_messages').insert([
@@ -67,7 +74,7 @@ export async function POST(request) {
 
     if (error) {
       console.error('Contact insert error:', error);
-      return NextResponse.json({ error: error.message || 'Failed to save contact message.' }, { status: 500 });
+      return NextResponse.json({ error: 'Your message could not be saved. Please try again or email horizon@horizon-edu.net.' }, { status: 500 });
     }
 
     try {
@@ -79,7 +86,10 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof RequestError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('Contact API error:', error);
-    return NextResponse.json({ error: error?.message || 'Failed to process contact message.' }, { status: 500 });
+    return NextResponse.json({ error: 'Unable to send your message. Please try again shortly.' }, { status: 500 });
   }
 }

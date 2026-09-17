@@ -1,14 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 
-function formatSupabaseError(error, defaultMessage = 'An internal error occurred.') {
-  const message = error?.message || '';
-  if (/Could not find the table/i.test(message)) {
-    return 'Database schema is missing or out of sync. Run DATABASE_SCHEMA.sql in Supabase to create the homepage_media table.';
-  }
-  return message || defaultMessage;
-}
-
 export async function GET() {
   if (!supabaseAdmin) {
     return NextResponse.json({ items: [] }, { status: 200 });
@@ -16,13 +8,15 @@ export async function GET() {
 
   const { data, error } = await supabaseAdmin
     .from('homepage_media')
-    .select('*')
+    .select('id, title, description, media_type, media_url, thumbnail_url, button_text, button_link, sort_order')
     .eq('is_published', true)
     .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: true })
+    .limit(24);
 
   if (error) {
-    return NextResponse.json({ error: formatSupabaseError(error, 'Unable to fetch homepage media') }, { status: 500 });
+    console.error('Homepage media could not be loaded:', error.code);
+    return NextResponse.json({ error: 'Student stories are temporarily unavailable.' }, { status: 503 });
   }
 
   return NextResponse.json({ items: data || [] });

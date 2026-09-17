@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin, isInvalidSupabaseApiKeyError, supabaseAdminKeyMalformed } from '../../../../../../lib/supabaseAdmin';
+import { readJson, textField, RequestError } from '../../../../_lib/request';
 
 export async function PATCH(request, { params }) {
   if (!supabaseAdmin || supabaseAdminKeyMalformed) {
@@ -51,9 +52,15 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    const { id } = params;
-    const body = await request.json();
-    const { status, rejection_message, admin_note } = body;
+    const { id } = await params;
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id || '')) {
+      throw new RequestError('Invalid application id.');
+    }
+    const body = await readJson(request);
+    const status = textField(body.status, 'Status', 30);
+    const rejection_message = typeof body.rejection_message === 'undefined' ? undefined : textField(body.rejection_message, 'Rejection message', 5000);
+    const admin_note = typeof body.admin_note === 'undefined' ? undefined : textField(body.admin_note, 'Admin note', 5000);
+    if (!status && rejection_message === undefined && admin_note === undefined) throw new RequestError('Choose a status or add a note.');
 
     // Validate status
     const validStatuses = ['submitted', 'evaluating', 'accepted', 'rejected'];
@@ -67,8 +74,8 @@ export async function PATCH(request, { params }) {
     // Update application
     const updateData = {
       ...(status && { application_status: status }),
-      ...(rejection_message && { rejection_message }),
-      ...(admin_note && { admin_note }),
+      ...(rejection_message !== undefined && { rejection_message }),
+      ...(admin_note !== undefined && { admin_note }),
       status_updated_at: new Date().toISOString(),
     };
 
@@ -89,6 +96,7 @@ export async function PATCH(request, { params }) {
 
     return NextResponse.json({ application: data });
   } catch (err) {
+    if (err instanceof RequestError) return NextResponse.json({ error: err.message }, { status: err.status });
     console.error('Unexpected error:', err);
     return NextResponse.json(
       { error: 'Internal server error' },

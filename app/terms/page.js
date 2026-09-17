@@ -1,47 +1,71 @@
 import Link from 'next/link';
+import Navbar from '../../components/Navbar';
+import Footer from '../../components/PremiumFooter';
+import EnglishContentNotice from '../../components/EnglishContentNotice';
+
+export const metadata = { title: 'Terms of service', description: 'The scope and terms of Horizon’s university guidance and application support services.', alternates: { canonical: '/terms' } };
 
 export default function TermsPage() {
   return (
-    <main className="section privacy-page">
-      <div className="container">
+    <><Navbar/><main className="horizon-legal" id="main-content" lang="en" dir="ltr" tabIndex={-1}>
+      <div className="container" style={{ maxWidth: 900 }}>
+        <EnglishContentNotice />
         <div className="section-header">
-          <span className="section-label">Terms of Service</span>
-          <h1>Terms of Service</h1>
+          <span className="section-label">Terms of service</span>
+          <h1>Terms of service</h1>
           <p>
-            Welcome to Horizon Educational Consultancy. These terms govern your use of our website and services.
+            These terms explain how Horizon Educational Consultancy supports students and how our website and application services are used.
           </p>
         </div>
 
         <div className="privacy-content">
-          <h2>1. Acceptance of Terms</h2>
+          <h2>1. Scope of services</h2>
           <p>
-            By using our website or submitting an application, you agree to these terms and any additional policies referenced here.
+            Horizon provides educational guidance, application support, document preparation assistance, and communication support
+            for students seeking study opportunities in Türkiye. We do not control university admissions decisions, visa decisions,
+            government procedures, or external timelines.
           </p>
 
-          <h2>2. Services</h2>
+          <h2>2. Student responsibilities</h2>
           <p>
-            Horizon provides guidance for international students applying to Turkish universities, including application support, document preparation, and admission assistance.
+            Students are responsible for providing accurate information, submitting complete documents, meeting deadlines, and
+            following the instructions of universities or other institutions. We act as a support partner, but final decisions are made by the relevant university, authority, or institution.
           </p>
 
-          <h2>3. Information Use</h2>
+          <h2>3. No guaranteed outcomes</h2>
           <p>
-            We use the information you provide only to process your application and to communicate with you about our educational services. We do not sell your personal information.
+            Horizon does not guarantee admission, acceptance, scholarship outcome, visa approval, or accommodation placement. Any
+            assessment or guidance we provide is based on the information available at the time of consultation and should be treated as a support service rather than a guaranteed result.
           </p>
 
-          <h2>4. User Responsibilities</h2>
+          <h2>4. Fees and third-party costs</h2>
           <p>
-            You are responsible for providing accurate information and documents. You agree to use the website lawfully and respectfully.
+            Fees for consultancy or service support, if applicable, are separate from university tuition, application fees, document
+            certification costs, translation costs, and any other official third-party charges. Students remain responsible for those external costs unless otherwise agreed in writing.
           </p>
 
-          <h2>5. Limitation of Liability</h2>
+          <h2>5. Communication and content</h2>
           <p>
-            Horizon is not responsible for decisions made by universities or for outcomes beyond our control. We do our best to support your application process, but we cannot guarantee admission or visa approval.
+            We may communicate with students by email, phone, WhatsApp, or other approved channels. We expect students to provide
+            clear, truthful information and to keep communications respectful and professional.
           </p>
 
-          <h2>6. Contact</h2>
+          <h2>6. Document and privacy standards</h2>
           <p>
-            If you have questions about these terms, please contact us at{' '}
-            <a href="mailto:horizon@horizon-edu.net">horizon@horizon-edu.net</a>.
+            Students must ensure that submitted documents are authentic, accurate, and legally permitted for the application process.
+            We process sensitive personal information in line with our privacy policy and internal security procedures.
+          </p>
+
+          <h2>7. Limitation of liability</h2>
+          <p>
+            Horizon is not liable for decisions, delays, or outcomes outside our direct control, including university admissions,
+            governmental procedures, and external service providers. Our responsibility is to support your process with reasonable care and clear communication.
+          </p>
+
+          <h2>8. Contact</h2>
+          <p>
+            If you have questions about these terms, contact us at{' '}
+            <a dir="ltr" href="mailto:horizon@horizon-edu.net">horizon@horizon-edu.net</a>.
           </p>
 
           <Link href="/" className="button button-secondary" style={{ marginTop: '2rem' }}>
@@ -49,6 +73,6 @@ export default function TermsPage() {
           </Link>
         </div>
       </div>
-    </main>
+    </main><Footer/></>
   );
 }

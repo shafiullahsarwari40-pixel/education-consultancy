@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin, isInvalidSupabaseApiKeyError, supabaseAdminKeyMalformed } from '../../../../../../lib/supabaseAdmin';
+import { randomUUID } from 'node:crypto';
+import { readBoundedBody, textField, RequestError } from '../../../../_lib/request';
 
 export async function POST(request, { params }) {
   if (!supabaseAdmin || supabaseAdminKeyMalformed) {
@@ -75,13 +77,22 @@ export async function POST(request, { params }) {
     }
 
     // Parse the multipart form data
-    const formData = await request.formData();
+    const contentType = request.headers.get('content-type') || '';
+    if (!contentType.toLowerCase().startsWith('multipart/form-data')) throw new RequestError('Please upload a PDF form.', 415);
+    const boundedBody = await readBoundedBody(request, 4 * 1024 * 1024 + 128 * 1024);
+    let formData;
+    try {
+      formData = await new Response(boundedBody, { headers: { 'Content-Type': contentType } }).formData();
+    } catch {
+      throw new RequestError('The upload could not be read.');
+    }
     const file = formData.get('file');
-    const status = formData.get('status')?.toString();
-    const admin_note = formData.get('admin_note')?.toString();
-    const rejection_message = formData.get('rejection_message')?.toString();
+    const status = textField(formData.get('status'), 'Status', 30);
+    const admin_note = textField(formData.get('admin_note'), 'Admin note', 5000);
+    const rejection_message = textField(formData.get('rejection_message'), 'Rejection message', 5000);
+    if (status && !['submitted', 'evaluating', 'accepted', 'rejected'].includes(status)) throw new RequestError('Choose a valid application status.');
 
-    if (!file) {
+    if (!file || typeof file === 'string') {
       return NextResponse.json(
         { error: 'No file provided' },
         { status: 400 }
@@ -89,29 +100,30 @@ export async function POST(request, { params }) {
     }
 
     // Validate file type
-    if (!file.type.includes('pdf')) {
+    if (file.type !== 'application/pdf') {
       return NextResponse.json(
         { error: 'Only PDF files are allowed' },
         { status: 400 }
       );
     }
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
+    // Leave room for multipart overhead under Vercel's 4.5 MB body limit.
+    if (!file.size || file.size > 4 * 1024 * 1024) {
       return NextResponse.json(
-        { error: 'File size must be less than 10MB' },
+        { error: 'File size must be 4 MB or less' },
         { status: 400 }
       );
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const filePath = `${application.user_id}/${id}/acceptance-letter.pdf`;
+    if (Buffer.from(arrayBuffer).subarray(0, 5).toString() !== '%PDF-') throw new RequestError('The file is not a valid PDF.');
+    const filePath = `${application.user_id}/${id}/acceptance-letter-${randomUUID()}.pdf`;
 
     // Upload to storage
     const { error: uploadError } = await supabaseAdmin.storage
       .from('acceptance-letters')
       .upload(filePath, new Uint8Array(arrayBuffer), {
-        upsert: true,
+        upsert: false,
         contentType: 'application/pdf',
       });
 
@@ -123,15 +135,10 @@ export async function POST(request, { params }) {
       );
     }
 
-    // Generate public URL
-    const { data: urlData } = await supabaseAdmin.storage
-      .from('acceptance-letters')
-      .getPublicUrl(filePath);
-
     // Build update payload
     const updatePayload = {
       acceptance_letter_path: filePath,
-      acceptance_letter_url: urlData?.publicUrl || '',
+      acceptance_letter_url: null,
       status_updated_at: new Date().toISOString(),
     };
 
@@ -156,14 +163,17 @@ export async function POST(request, { params }) {
 
     if (updateError) {
       console.error('Update error:', updateError);
+      await supabaseAdmin.storage.from('acceptance-letters').remove([filePath]);
       return NextResponse.json(
         { error: 'Failed to save file reference' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ success: true, application: updated });
+    const { data: signed } = await supabaseAdmin.storage.from('acceptance-letters').createSignedUrl(filePath, 60);
+    return NextResponse.json({ success: true, application: { ...updated, acceptance_letter_url: signed?.signedUrl || null } });
   } catch (err) {
+    if (err instanceof RequestError) return NextResponse.json({ error: err.message }, { status: err.status });
     console.error('Unexpected error:', err);
     return NextResponse.json(
       { error: 'Internal server error' },

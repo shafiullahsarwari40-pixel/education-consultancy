@@ -1,372 +1,533 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useLanguage } from '../lib/LanguageContext';
-import { supabase } from '../lib/supabaseClient';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { supabase } from "../lib/supabaseClient";
+import "../app/student-experience.css";
 
-const statusSteps = [
-  { value: 'submitted', labelKey: 'studentResult.statusSubmitted', color: '#0755ff' },
-  { value: 'evaluating', labelKey: 'studentResult.statusEvaluating', color: '#0755ff' },
-  { value: 'accepted', labelKey: 'studentResult.statusAccepted', color: '#0755ff' },
+const STEPS = [
+  {
+    value: "submitted",
+    label: "Application received",
+    description: "Your details are with our admissions team.",
+  },
+  {
+    value: "evaluating",
+    label: "Under review",
+    description: "Your application is being assessed.",
+  },
+  {
+    value: "accepted",
+    label: "University decision",
+    description: "Your decision and next steps appear here.",
+  },
 ];
-
-const statusMessageKeys = {
-  submitted: 'studentResult.statusMessageSubmitted',
-  evaluating: 'studentResult.statusMessageEvaluating',
-  accepted: 'studentResult.statusMessageAccepted',
-  accepted_pending_letter: 'studentResult.statusMessageAcceptedPendingLetter',
+const STATUS_LABELS = {
+  submitted: "Application received",
+  evaluating: "Under review",
+  accepted: "Accepted",
+  accepted_pending_letter: "Accepted · letter pending",
+  rejected: "Decision available",
 };
+const STATUS_MESSAGES = {
+  submitted:
+    "We have received your application. Our team will review your details and advise if further information is needed.",
+  evaluating:
+    "Your application is under review. Contact admissions if your contact details or circumstances have changed.",
+  accepted:
+    "Your application has been accepted. Review your acceptance letter and speak to our team about the next steps.",
+  accepted_pending_letter:
+    "Your application has been accepted. Your acceptance letter is being prepared and will appear here when available.",
+  rejected:
+    "This application has not been accepted. Our team can help you understand the decision and discuss other options.",
+};
+const DOCUMENT_LABELS = {
+  passport: "Passport",
+  transcript: "Academic transcript",
+  diploma: "Diploma",
+  exam_sheet: "Exam results",
+  id_card: "National ID / Tazkira",
+  photo: "Personal photograph",
+};
+function dateLabel(value) {
+  if (!value) return "Not available";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "Not available"
+    : date.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+}
 
 export default function StudentResultClient() {
-  const { t } = useLanguage();
   const router = useRouter();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [application, setApplication] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
+  const [documents, setDocuments] = useState([]);
+  const [activeDocument, setActiveDocument] = useState("");
+  const [documentError, setDocumentError] = useState("");
 
   useEffect(() => {
-    if (!supabase) {
-      setError(t('studentResult.errorSupabaseNotConfigured'));
-      setLoading(false);
-      return;
-    }
-
-    (async () => {
+    let active = true;
+    const controller = new AbortController();
+    async function load() {
+      setLoading(true);
+      setError("");
       try {
-        const { data } = await supabase.auth.getSession();
-        const currentSession = data?.session;
-
-        if (!currentSession) {
-          router.push('/student/auth?redirect=/student/result');
+        if (!supabase)
+          throw new Error(
+            "Your student portal is temporarily unavailable. Please contact admissions for an update.",
+          );
+        const { data, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+        if (!active) return;
+        setSession(data?.session || null);
+        if (!data?.session) return;
+        const response = await fetch("/api/student/application", {
+          headers: { Authorization: `Bearer ${data.session.access_token}` },
+          signal: controller.signal,
+          cache: "no-store",
+        });
+        if (response.status === 401) {
+          setSession(null);
           return;
         }
-
-        setSession(currentSession);
-        await fetchApplication(currentSession.access_token);
+        if (!response.ok)
+          throw new Error(
+            "We could not load your application. Please try again, or contact admissions for an update.",
+          );
+        const result = await response.json();
+        if (active) {
+          setApplication(result.application || null);
+          setDocuments(
+            Array.isArray(result.documents)
+              ? result.documents.filter((type) =>
+                  Object.hasOwn(DOCUMENT_LABELS, type),
+                )
+              : [],
+          );
+        }
       } catch (err) {
-        console.error('Session check error:', err);
-        setError(t('studentResult.errorFailedVerifySession'));
+        if (active && err.name !== "AbortError")
+          setError(err.message || "We could not connect. Please try again.");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
-    })();
-  }, [router, t]);
+    }
+    load();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [attempt]);
 
-  async function fetchApplication(token) {
+  async function handleSignOut() {
     try {
-      const res = await fetch('/api/student/application', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || t('studentResult.errorFetchApplication'));
-      }
-
-      const data = await res.json();
-      setApplication(data.application || null);
-    } catch (err) {
-      console.error('Fetch application error:', err);
-      setError(err.message || t('studentResult.errorUnknown'));
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) throw signOutError;
+      router.push("/");
+    } catch {
+      setError("We could not sign you out. Please try again.");
     }
   }
 
-  async function handleSignOut() {
-    if (!supabase) return;
-    await supabase.auth.signOut();
-    router.push('/');
+  async function downloadLetter() {
+    if (downloading) return;
+    setDownloading(true);
+    setDownloadError("");
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data?.session)
+        throw new Error("Your session has expired. Please sign in again.");
+      const response = await fetch("/api/student/acceptance-letter", {
+        headers: { Authorization: `Bearer ${data.session.access_token}` },
+      });
+      if (!response.ok)
+        throw new Error(
+          response.status === 401
+            ? "Your session has expired. Please sign in again."
+            : "We could not download your letter. Please try again or contact admissions.",
+        );
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "horizon-acceptance-letter.pdf";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setDownloadError(err.message || "Download failed. Please try again.");
+    } finally {
+      setDownloading(false);
+    }
   }
 
-  if (loading) {
-    return (
-      <main className="section" style={{ minHeight: '80vh' }}>
-        <div className="container" style={{ textAlign: 'center', paddingTop: '2rem' }}>
-          <p>{t('studentResult.loadingStatus')}</p>
-        </div>
-      </main>
-    );
+  async function downloadDocument(type) {
+    if (activeDocument) return;
+    setActiveDocument(type);
+    setDocumentError("");
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data?.session)
+        throw new Error("Your session has expired. Please sign in again.");
+      const response = await fetch(
+        `/api/student/document?type=${encodeURIComponent(type)}`,
+        { headers: { Authorization: `Bearer ${data.session.access_token}` } },
+      );
+      if (!response.ok)
+        throw new Error(
+          "We could not download this document. Please try again or contact admissions.",
+        );
+      const blob = await response.blob();
+      const extension =
+        {
+          "application/pdf": "pdf",
+          "image/jpeg": "jpg",
+          "image/png": "png",
+          "image/webp": "webp",
+          "image/gif": "gif",
+        }[blob.type] || "bin";
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `horizon-${type}.${extension}`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setDocumentError(err.message || "Download failed. Please try again.");
+    } finally {
+      setActiveDocument("");
+    }
   }
 
-  if (error) {
-    return (
-      <main className="section" style={{ minHeight: '80vh' }}>
-        <div className="container" style={{ maxWidth: 720, margin: '0 auto', paddingTop: '2rem' }}>
-          <div style={{
-            padding: '2rem',
-            background: '#ffebee',
-            borderRadius: '0.75rem',
-            color: '#c62828',
-            marginBottom: '1.5rem',
-          }}>
-            <p style={{ margin: 0 }}>{error}</p>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="button button-secondary"
-            style={{ marginRight: '1rem' }}
-          >
-            {t('common.signOut')}
-          </button>
-          <Link href="/" className="button button-secondary">
-            {t('common.backToHome')}
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
-  if (!application) {
-    return (
-      <main className="section" style={{ minHeight: '80vh' }}>
-        <div className="container" style={{ maxWidth: 720, margin: '0 auto', paddingTop: '2rem' }}>
-          <div style={{
-            padding: '2rem',
-            background: '#f7f9fc',
-            borderRadius: '1rem',
-            textAlign: 'center',
-            marginBottom: '2rem',
-          }}>
-            <h2 style={{ marginTop: 0 }}>{t('studentResult.noApplicationTitle')}</h2>
-            <p style={{ color: '#666', marginBottom: '1.5rem' }}>
-              {t('studentResult.noApplicationDescription')}
-            </p>
-            <Link href="/apply" className="button button-primary button-large">
-              {t('studentResult.startApplication')}
-            </Link>
-            <button
-              onClick={handleSignOut}
-              className="button button-secondary button-large"
-              style={{ marginTop: '1rem' }}
-            >
-              {t('common.signOut')}
-            </button>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  const displaySteps = statusSteps;
-  const currentStepIndex = displaySteps.findIndex((step) => step.value === application.application_status);
-  const hasAcceptanceLetter = application.application_status === 'accepted' && application.acceptance_letter_url;
-  const customMessage = application.rejection_message || application.admin_note;
-  const displayMessage = customMessage || t(statusMessageKeys[application.application_status] || '');
+  const status = application?.application_status || "submitted";
+  const isAccepted =
+    status === "accepted" || status === "accepted_pending_letter";
+  const currentStep =
+    isAccepted || status === "rejected"
+      ? 2
+      : STEPS.findIndex((item) => item.value === status);
+  const statusLabel = STATUS_LABELS[status] || "Update available";
+  const hasLetter =
+    application?.acceptance_letter_path || application?.acceptance_letter_url;
 
   return (
-    <main className="section" style={{ minHeight: '80vh' }}>
-      <div className="container" style={{ maxWidth: 920, margin: '0 auto' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '2rem',
-          flexWrap: 'wrap',
-          gap: '1rem',
-        }}>
-          <div>
-            <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem' }}>{t('studentResult.yourApplicationTitle')}</h1>
-            <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
-              {t('common.loggedInAs')} <strong>{session?.user?.email}</strong>
-            </p>
+    <main id="main-content" className="student-experience">
+      <header className="student-topbar">
+        <Link href="/" className="student-brand" aria-label="Horizon home">
+          Horizon<span>EDUCATIONAL CONSULTANCY</span>
+        </Link>
+        {session ? (
+          <div className="student-account">
+            {session.user.email}
+            <button type="button" onClick={handleSignOut}>
+              Sign out
+            </button>
           </div>
-          <button
-            onClick={handleSignOut}
-            className="button button-secondary"
-          >
-            {t('common.signOut')}
-          </button>
-        </div>
-
-        {/* Application Details Card */}
-        <div style={{
-          padding: '1.5rem',
-          background: '#fff',
-          border: '1px solid #dde4ee',
-          borderRadius: '1rem',
-          marginBottom: '2rem',
-        }}>
-          <h2 style={{ marginTop: 0, fontSize: '1.1rem' }}>{t('studentResult.applicationDetailsTitle')}</h2>
-          <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-            <div>
-              <p style={{ margin: '0 0 0.25rem 0', color: '#999', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 600 }}>
-                {t('studentResult.labelFullName')}
-              </p>
-              <p style={{ margin: 0, fontWeight: 600 }}>{application.full_name}</p>
-            </div>
-            <div>
-              <p style={{ margin: '0 0 0.25rem 0', color: '#999', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 600 }}>
-                {t('studentResult.labelEmail')}
-              </p>
-              <p style={{ margin: 0 }}>{application.email}</p>
-            </div>
-            <div>
-              <p style={{ margin: '0 0 0.25rem 0', color: '#999', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 600 }}>
-                {t('studentResult.labelUniversity')}
-              </p>
-              <p style={{ margin: 0 }}>{application.university || '—'}</p>
-            </div>
-            <div>
-              <p style={{ margin: '0 0 0.25rem 0', color: '#999', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 600 }}>
-                {t('studentResult.labelProgram')}
-              </p>
-              <p style={{ margin: 0 }}>{application.program || '—'}</p>
-            </div>
-            <div>
-              <p style={{ margin: '0 0 0.25rem 0', color: '#999', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 600 }}>
-                {t('studentResult.submittedDateLabel')}
-              </p>
-              <p style={{ margin: 0 }}>
-                {new Date(application.created_at).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Status Steps */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ marginBottom: '1.5rem' }}>{t('studentResult.applicationStatusTitle')}</h2>
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {displaySteps.map((step, index) => {
-              const isCurrent = index === currentStepIndex;
-              const isCompleted = index < currentStepIndex;
-              
-              return (
-                <div
-                  key={step.value}
-                  style={{
-                    padding: '1.25rem',
-                    borderRadius: '0.75rem',
-                    background: isCompleted || isCurrent ? '#ffffff' : '#f5f5f5',
-                    border: isCompleted || isCurrent ? '2px solid #0755ff' : '1px solid #ddd',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '1rem',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: '50%',
-                      display: 'grid',
-                      placeItems: 'center',
-                      background: isCurrent ? '#0755ff' : '#e0e0e0',
-                      color: 'white',
-                      fontWeight: 700,
-                      fontSize: '1.1rem',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {index + 1}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1rem' }}>
-                      {t(step.labelKey)}
-                    </h3>
-                    <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
-                      {isCurrent ? t('studentResult.statusCurrentStep') : isCompleted ? t('studentResult.statusCompleted') : t('studentResult.statusPending')}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-            
-          </div>
-        </div>
-
-        {/* Status Message */}
-        <div style={{
-          padding: '1.5rem',
-          background: application.application_status === 'accepted' ? '#e8f5e9' : '#e3f2fd',
-          borderRadius: '0.75rem',
-          border: '1px solid',
-          borderColor: application.application_status === 'accepted' ? '#4caf50' : '#2196f3',
-          marginBottom: '2rem',
-        }}>
-          <p style={{
-            margin: 0,
-            color: application.application_status === 'accepted' ? '#2e7d32' : '#0066cc',
-            lineHeight: 1.6,
-          }}>
-            {displayMessage}
-          </p>
-        </div>
-
-        {/* Acceptance Letter Download */}
-        {application.application_status === 'accepted' && (
-          <div style={{
-            padding: '1.5rem',
-            background: '#f7f9fc',
-            borderRadius: '0.75rem',
-            border: '1px solid #dde4ee',
-            marginBottom: '2rem',
-          }}>
-            <h3 style={{ marginTop: 0 }}>{t('studentResult.acceptanceLetterTitle')}</h3>
-            {hasAcceptanceLetter ? (
-              <button
-                onClick={() => {
-                  fetch('/api/student/acceptance-letter', {
-                    headers: { Authorization: `Bearer ${session?.access_token}` },
-                  })
-                    .then(async res => {
-                      if (!res.ok) {
-                        let errorText = t('studentResult.downloadError');
-                        try {
-                          const body = await res.json();
-                          if (body?.error) errorText = body.error;
-                        } catch (jsonErr) {}
-                        throw new Error(errorText);
-                      }
-                      return res.blob();
-                    })
-                    .then(blob => {
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = 'acceptance-letter.pdf';
-                      document.body.appendChild(a);
-                      a.click();
-                      window.URL.revokeObjectURL(url);
-                      document.body.removeChild(a);
-                    })
-                    .catch(err => alert(`${t('studentResult.downloadErrorPrefix')} ${err.message}`));
-                }}
-                className="button button-primary"
-              >
-                {t('studentResult.downloadAcceptanceLetter')}
-              </button>
-            ) : (
-              <p style={{ margin: 0, color: '#666' }}>
-                {t('studentResult.acceptanceLetterPending')}
-              </p>
-            )}
-          </div>
+        ) : (
+          <Link href="/#contact" className="student-help-link">
+            Need a hand? <span>Talk to us ↗</span>
+          </Link>
         )}
-
-        {/* Help Section */}
-        <div style={{
-          padding: '1.5rem',
-          background: '#f9f9f9',
-          borderRadius: '0.75rem',
-          textAlign: 'center',
-        }}>
-          <p style={{ margin: '0 0 1rem 0', color: '#666' }}>
-            {t('studentResult.questionNeedHelp')}
-          </p>
-          <p style={{ margin: 0, fontSize: '0.9rem' }}>
-            <Link href="/" style={{ color: '#0755ff', textDecoration: 'none' }}>
-              {t('studentResult.contactUsWebsite')}
-            </Link>
-            {' '}{t('studentResult.or')} {' '}
-            <Link href="/privacy" style={{ color: '#0755ff', textDecoration: 'none' }}>
-              {t('studentResult.faqs')}
-            </Link>
-          </p>
-        </div>
+      </header>
+      <div className="student-content">
+        {loading ? (
+          <div className="student-loading" role="status">
+            <span className="student-spinner" />
+            Preparing your application timeline…
+          </div>
+        ) : error ? (
+          <section className="student-state-card">
+            <span className="student-eyebrow">YOUR APPLICATION</span>
+            <h1>Let’s reconnect.</h1>
+            <p role="alert">{error}</p>
+            <div className="student-action-row">
+              <button
+                type="button"
+                className="student-primary"
+                onClick={() => setAttempt(attempt + 1)}
+              >
+                Try again ↗
+              </button>
+              <Link href="/#contact" className="student-secondary">
+                Contact admissions
+              </Link>
+            </div>
+          </section>
+        ) : !session ? (
+          <div className="student-entry-layout">
+            <section className="student-page-heading">
+              <span className="student-eyebrow">YOUR STUDENT PORTAL</span>
+              <h1>
+                Every step forward.
+                <br />
+                <em>All in one place.</em>
+              </h1>
+              <p>
+                Sign in to view your university application, read the latest
+                updates, and download your acceptance letter when it is
+                available.
+              </p>
+              <div className="student-action-row">
+                <Link
+                  href="/student/auth?redirect=/student/result"
+                  className="student-primary"
+                >
+                  Sign in to view my status <span aria-hidden="true">↗</span>
+                </Link>
+                <Link href="/apply" className="student-secondary">
+                  Start an application
+                </Link>
+              </div>
+            </section>
+            <aside className="student-entry-card">
+              <span className="student-eyebrow">CLARITY AT EVERY STAGE</span>
+              <h2>Your journey, connected.</h2>
+              <ol className="student-checklist">
+                {STEPS.map((item, index) => (
+                  <li key={item.value}>
+                    <span>0{index + 1}</span>
+                    <div>
+                      <strong>{item.label}</strong>
+                      <p>{item.description}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <p className="student-entry-footnote">
+                Your timeline reflects updates recorded by the Horizon
+                admissions team.
+              </p>
+            </aside>
+          </div>
+        ) : !application ? (
+          <section className="student-state-card">
+            <span className="student-state-symbol" aria-hidden="true">
+              ↗
+            </span>
+            <span className="student-eyebrow">A NEW CHAPTER AWAITS</span>
+            <h1>
+              Your journey starts
+              <br />
+              <em>with an application.</em>
+            </h1>
+            <p>
+              There is no application linked to this account yet. Begin with
+              your details and study preferences, then review everything before
+              sending.
+            </p>
+            <div className="student-action-row">
+              <Link href="/apply" className="student-primary">
+                Start my application <span aria-hidden="true">↗</span>
+              </Link>
+            </div>
+            <p className="student-entry-footnote">
+              Already applied using a different email? Contact admissions so we
+              can help you find it.
+            </p>
+          </section>
+        ) : (
+          <>
+            <section className="student-result-banner">
+              <div>
+                <span className="student-eyebrow">YOUR UNIVERSITY JOURNEY</span>
+                <h1>
+                  Welcome, {application.full_name?.split(" ")[0] || "student"}.
+                </h1>
+                <p>
+                  Submitted {dateLabel(application.created_at)} · Your next
+                  chapter is taking shape.
+                </p>
+              </div>
+              <span className="student-status-badge">{statusLabel}</span>
+            </section>
+            <div className="student-result-refresh">
+              <span>
+                Latest recorded update:{" "}
+                {dateLabel(
+                  application.status_updated_at || application.created_at,
+                )}
+              </span>
+              <button type="button" onClick={() => setAttempt(attempt + 1)}>
+                Refresh status ↻
+              </button>
+            </div>
+            <div className="student-result-grid">
+              <div>
+                <section className="student-panel">
+                  <h2>Your application timeline</h2>
+                  <ol className="student-timeline">
+                    {STEPS.map((item, index) => (
+                      <li
+                        key={item.value}
+                        className={
+                          index === currentStep
+                            ? "current"
+                            : index < currentStep
+                              ? "complete"
+                              : ""
+                        }
+                        aria-current={
+                          index === currentStep ? "step" : undefined
+                        }
+                      >
+                        <span aria-hidden="true">
+                          {index < currentStep ? "✓" : index + 1}
+                        </span>
+                        <div>
+                          <strong>
+                            {index === 2 && status === "rejected"
+                              ? "Decision available"
+                              : item.label}
+                          </strong>
+                          <p>
+                            {index === currentStep
+                              ? "Current stage"
+                              : index < currentStep
+                                ? "Completed"
+                                : "Upcoming"}{" "}
+                            · {item.description}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+                <section className="student-panel">
+                  <span className="student-eyebrow">WHAT HAPPENS NEXT</span>
+                  <h2>{statusLabel}</h2>
+                  <p className="student-panel-note">
+                    {(status === "rejected" && application.rejection_message) ||
+                      application.admin_note ||
+                      STATUS_MESSAGES[status] ||
+                      "Our team has updated your application. Contact admissions to discuss the details."}
+                  </p>
+                  <Link href="/#contact" className="student-secondary">
+                    Speak with my advisor ↗
+                  </Link>
+                </section>
+              </div>
+              <div>
+                <section className="student-panel">
+                  <h2>Your application at a glance</h2>
+                  <dl className="student-definition single">
+                    {[
+                      ["Full name", application.full_name],
+                      ["Email", application.email],
+                      [
+                        "University",
+                        application.university ||
+                          "To discuss with your advisor",
+                      ],
+                      [
+                        "Degree",
+                        application.program || "To discuss with your advisor",
+                      ],
+                      ["Phone", application.phone],
+                      ["Country", application.country || "Not provided"],
+                    ].map(([label, value]) => (
+                      <div key={label}>
+                        <dt>{label}</dt>
+                        <dd>{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+                {isAccepted && (
+                  <section className="student-panel">
+                    <span className="student-eyebrow">YOUR NEXT CHAPTER</span>
+                    <h2>Acceptance letter</h2>
+                    {hasLetter ? (
+                      <>
+                        <p className="student-panel-note">
+                          Keep a copy of your letter and review its conditions
+                          with your advisor.
+                        </p>
+                        <button
+                          type="button"
+                          className="student-primary"
+                          onClick={downloadLetter}
+                          disabled={downloading}
+                        >
+                          {downloading
+                            ? "Preparing download…"
+                            : "Download my letter ↓"}
+                        </button>
+                      </>
+                    ) : (
+                      <p className="student-panel-note">
+                        Your letter is not available yet. Please check back or
+                        contact admissions for an update.
+                      </p>
+                    )}
+                    {downloadError && (
+                      <p className="student-notice error" role="alert">
+                        {downloadError}
+                      </p>
+                    )}
+                  </section>
+                )}
+              </div>
+            </div>
+            {documents.length > 0 && (
+              <section className="student-panel">
+                <span className="student-eyebrow">
+                  YOUR SUPPORTING DOCUMENTS
+                </span>
+                <h2>Everything you have shared.</h2>
+                <div className="student-saved-documents">
+                  {documents.map((type) => (
+                    <button
+                      type="button"
+                      className="student-secondary"
+                      key={type}
+                      disabled={Boolean(activeDocument)}
+                      onClick={() => downloadDocument(type)}
+                    >
+                      {activeDocument === type
+                        ? "Preparing download…"
+                        : DOCUMENT_LABELS[type]}{" "}
+                      <span aria-hidden="true">↓</span>
+                    </button>
+                  ))}
+                </div>
+                {documentError && (
+                  <p className="student-notice error" role="alert">
+                    {documentError}
+                  </p>
+                )}
+              </section>
+            )}
+            <aside className="student-support-strip">
+              <div>
+                <strong>A question about your application?</strong>
+                <p>Your admissions team is here to help.</p>
+              </div>
+              <Link href="/#contact">Get in touch ↗</Link>
+            </aside>
+          </>
+        )}
       </div>
+      <footer className="student-page-footer">
+        <span>Horizon Educational Consultancy</span>
+        <div>
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/terms">Terms</Link>
+          <Link href="/">Back to website ↗</Link>
+        </div>
+      </footer>
     </main>
   );
 }

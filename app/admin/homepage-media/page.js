@@ -94,6 +94,10 @@ export default function HomepageMediaAdminPage() {
       setError('Please enter a valid button link.');
       return;
     }
+    if (form.file && form.file.size > 4 * 1024 * 1024) {
+      setError('Media files must be 4 MB or smaller on the current hosting plan.');
+      return;
+    }
 
     setSaving(true);
     setError('');
@@ -248,6 +252,7 @@ export default function HomepageMediaAdminPage() {
           <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span>Upload file</span>
             <input type="file" accept={form.media_type === 'video' ? '.mp4,.webm' : '.jpg,.jpeg,.png,.webp'} onChange={(event) => setForm((prev) => ({ ...prev, file: event.target.files?.[0] || null }))} />
+            <small>JPG, PNG, WebP, MP4, or WebM · 4 MB maximum</small>
           </label>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span>Display order</span>

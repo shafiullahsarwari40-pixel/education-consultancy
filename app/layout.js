@@ -1,35 +1,66 @@
-import fs from 'fs';
-import path from 'path';
-import './globals.css';
-import '../styles_new.css';
-import { LanguageProvider } from '../lib/LanguageContext';
+import fs from "fs";
+import path from "path";
+import { Manrope, Noto_Sans_Arabic, Playfair_Display } from "next/font/google";
+import "./globals.css";
+import "../styles_new.css";
+import "./premium.css";
+import "./quality.css";
+import { LanguageProvider } from "../lib/LanguageContext";
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+const arabic = Noto_Sans_Arabic({
+  subsets: ["arabic"],
+  variable: "--font-arabic",
+  display: "swap",
+  preload: false,
+});
 
 function getPublicEnv() {
   const env = {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "",
+    NEXT_PUBLIC_SUPABASE_ANON_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
   };
 
   // If env vars are already set from process.env, return them immediately
-  if (env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.log('[getPublicEnv] Using process.env values');
+  if (
+    env.NEXT_PUBLIC_SUPABASE_URL &&
+    (env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  ) {
     return env;
   }
 
   try {
-    const envPath = path.join(process.cwd(), '.env.local');
-    let content = fs.readFileSync(envPath, 'utf8');
+    const envPath = path.join(process.cwd(), ".env.local");
+    let content = fs.readFileSync(envPath, "utf8");
 
     // Remove BOM if present
-    content = content.replace(/^\uFEFF/, '');
+    content = content.replace(/^\uFEFF/, "");
 
     // If content is empty or doesn't contain expected keys, try reading as utf16le
-    if (!content.includes('NEXT_PUBLIC_SUPABASE_URL') && !content.includes('NEXT_PUBLIC_SUPABASE_ANON_KEY')) {
+    if (
+      !content.includes("NEXT_PUBLIC_SUPABASE_URL") &&
+      !content.includes("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") &&
+      !content.includes("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    ) {
       try {
-        content = fs.readFileSync(envPath, 'utf16le');
-        content = content.replace(/^\uFEFF/, '');
-      } catch (err) {
-        console.warn('[getPublicEnv] Fallback to utf16le failed:', err.message);
+        content = fs.readFileSync(envPath, "utf16le");
+        content = content.replace(/^\uFEFF/, "");
+      } catch {
+        /* The usual environment configuration remains the fallback. */
       }
     }
 
@@ -39,27 +70,20 @@ function getPublicEnv() {
       if (!match) continue;
       const key = match[1].trim();
       let value = match[2].trim();
-      
+
       // Remove surrounding quotes if present
       if (value.startsWith('"') && value.endsWith('"')) {
         value = value.slice(1, -1);
       }
-      
+
       // Only set if the key is NEXT_PUBLIC_ and env value is not already set
-      if (key.startsWith('NEXT_PUBLIC_') && key in env && !env[key]) {
+      if (key.startsWith("NEXT_PUBLIC_") && key in env && !env[key]) {
         env[key] = value;
-        console.log(`[getPublicEnv] Loaded from .env.local: ${key}=${value.slice(0, 20)}...`);
       }
     }
-  } catch (error) {
-    console.log('[getPublicEnv] .env.local file not found or unreadable:', error.message);
+  } catch {
+    /* Hosted environments use process.env; a local file is optional. */
   }
-
-  // Log final state
-  console.log('[getPublicEnv] Final config:', {
-    NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'MISSING',
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? `SET (first 20: ${env.NEXT_PUBLIC_SUPABASE_ANON_KEY.slice(0, 20)})` : 'MISSING',
-  });
 
   return env;
 }
@@ -67,51 +91,70 @@ function getPublicEnv() {
 const publicEnv = getPublicEnv();
 
 export const metadata = {
-  title: 'Horizon Educational Consultancy | Study in Turkey with Trusted University Partners',
-  description: 'Expert guidance for international students applying to Turkish universities. Fast application support, document review, visa assistance, and multilingual WhatsApp support.',
+  metadataBase: new URL("https://horizoneducon.com"),
+  title: {
+    default:
+      "Study in Türkiye, with a clear plan | Horizon Educational Consultancy",
+    template: "%s | Horizon Educational Consultancy",
+  },
+  description:
+    "Horizon helps international students compare university options in Türkiye, prepare accurate applications, and track each stage with clear communication.",
   openGraph: {
-    title: 'Horizon Educational Consultancy',
-    description: 'Study in Turkey with trusted university partnerships, fast admissions and multilingual student support.',
+    type: "website",
+    siteName: "Horizon Educational Consultancy",
+    locale: "en_US",
+    title: "Horizon Educational Consultancy",
+    description:
+      "Guidance for international students choosing universities in Türkiye and preparing applications with clarity and support.",
     images: [
       {
-        url: '/images/hero-bg.jpg',
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: 'Horizon Educational Consultancy - Study in Turkey'
-      }
-    ]
+        alt: "Horizon Educational Consultancy - Study in Türkiye",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Your future in Türkiye starts with the right plan.",
+    description:
+      "University discovery, application guidance, and a student portal that keeps your next step clear.",
+    images: ["/opengraph-image"],
   },
   icons: {
-    icon: '/images/logo.png',
-    shortcut: '/images/logo.png',
-    apple: '/images/logo.png',
+    icon: "/icon.svg",
+    apple: "/images/horizon-logo.webp",
   },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#071a2f",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html 
-      lang="en" 
+    <html
+      lang="en"
+      className={`${manrope.variable} ${playfair.variable} ${arabic.variable}`}
       suppressHydrationWarning
       data-supabase-url={publicEnv.NEXT_PUBLIC_SUPABASE_URL}
-      data-supabase-key={publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      data-supabase-key={
+        publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+        publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      }
     >
       <head>
-        <link rel="icon" href="/images/logo.png" />
-        <link rel="shortcut icon" href="/images/logo.png" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.__NEXT_PUBLIC_ENV__ = ${JSON.stringify(publicEnv)}; if (typeof console !== 'undefined') { console.log('[layout.js] Injected env:', window.__NEXT_PUBLIC_ENV__); }`,
+            __html: `window.__NEXT_PUBLIC_ENV__ = ${JSON.stringify(publicEnv).replace(/</g, "\\u003c")};`,
           }}
         />
       </head>
       <body>
-        <LanguageProvider>
-          {children}
-        </LanguageProvider>
+        <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
   );

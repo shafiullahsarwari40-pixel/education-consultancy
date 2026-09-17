@@ -34,13 +34,15 @@ export async function GET(request) {
   if (!authCheck.ok) return NextResponse.json(authCheck.body, { status: authCheck.status });
 
   const url = new URL(request.url);
-  const search = url.searchParams.get('search') || '';
+  const search = (url.searchParams.get('search') || '').trim().slice(0, 120);
   const sort = url.searchParams.get('sort') || 'desc';
 
   // Fetch applications with optional search and sorting
   let query = supabaseAdmin.from('applications').select('*').order('created_at', { ascending: sort === 'asc' });
   if (search) {
-    const searchTerm = `%${search}%`;
+    // PostgREST OR filters are a structured expression, so strip its delimiters
+    // and wildcard characters from a plain user search term.
+    const searchTerm = `%${search.replace(/[(),.%*\\]/g, '')}%`;
     query = query.or(`full_name.ilike.${searchTerm},email.ilike.${searchTerm}`);
   }
 
@@ -49,13 +51,13 @@ export async function GET(request) {
 
   // Stats
   const statsQueries = await Promise.all([
-    supabaseAdmin.from('applications').select('id', { count: 'exact' }),
-    supabaseAdmin.from('applications').select('id', { count: 'exact' }).eq('application_status', 'submitted'),
-    supabaseAdmin.from('applications').select('id', { count: 'exact' }).eq('application_status', 'accepted'),
-    supabaseAdmin.from('applications').select('id', { count: 'exact' }).eq('application_status', 'rejected'),
+    supabaseAdmin.from('applications').select('id', { count: 'exact', head: true }),
+    supabaseAdmin.from('applications').select('id', { count: 'exact', head: true }).eq('application_status', 'submitted'),
+    supabaseAdmin.from('applications').select('id', { count: 'exact', head: true }).eq('application_status', 'accepted'),
+    supabaseAdmin.from('applications').select('id', { count: 'exact', head: true }).eq('application_status', 'rejected'),
     supabaseAdmin
       .from('applications')
-      .select('id', { count: 'exact' })
+      .select('id', { count: 'exact', head: true })
       .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
   ]);
 

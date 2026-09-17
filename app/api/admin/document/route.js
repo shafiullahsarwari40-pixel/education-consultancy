@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { documentReference, parseDocumentReference } from '../../../../lib/documentStorage';
 
 async function requireAdmin(request) {
   const auth = request.headers.get('authorization') || '';
@@ -72,7 +73,7 @@ export async function GET(request) {
     if (!publicUrl) {
       return NextResponse.json({ error: 'Missing bucket or path or publicUrl' }, { status: 400 });
     }
-    const parsed = parseStoragePath(publicUrl);
+    const parsed = parseDocumentReference(publicUrl);
     if (!parsed) {
       return NextResponse.json({ error: 'Invalid public URL format' }, { status: 400 });
     }
@@ -80,9 +81,12 @@ export async function GET(request) {
     resolvedPath = parsed.objectPath;
   }
 
+  const verified = parseDocumentReference(documentReference(resolvedBucket, resolvedPath));
+  if (!verified) return NextResponse.json({ error: 'Invalid document reference.' }, { status: 400 });
+
   const { data, error } = await supabaseAdmin.storage.from(resolvedBucket).download(resolvedPath);
   if (error || !data) {
-    return NextResponse.json({ error: error?.message || 'Failed to download object' }, { status: 500 });
+    return NextResponse.json({ error: 'The document could not be downloaded. Please try again.' }, { status: 500 });
   }
 
   const ext = resolvedPath.split('.').pop() || 'bin';
@@ -90,7 +94,9 @@ export async function GET(request) {
   return new Response(data, {
     headers: {
       'Content-Type': mimeType,
-      'Content-Disposition': `inline; filename="${resolvedPath.split('/').pop()}"`,
+      'Content-Disposition': `attachment; filename="${resolvedPath.split('/').pop().replace(/[^a-zA-Z0-9._-]/g, '_')}"`,
+      'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff',
     },
   });
 }

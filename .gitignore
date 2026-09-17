@@ -17,6 +17,19 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+build-debug.txt
+build-output.txt
+
+# Local diagnostic scratch files (never commit credentials or rendered env data)
+temp-*.js
+temp-*.mjs
+temp_*.txt
+tmp-*.js
+tmp-*.py
+tmp-*.txt
+tmp_*.html
+vercel_*.json
+vercel_*.txt
 
 # Editor directories and files
 .vscode/
@@ -25,6 +38,8 @@ pnpm-debug.log*
 
 # Optional
 coverage/
+.private-migrations/
+artifacts/qa/
 build/
 .vercel
 .vercelenv

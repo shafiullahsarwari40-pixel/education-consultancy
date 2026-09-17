@@ -55,7 +55,7 @@ export async function GET(request) {
     }
 
     // If application has acceptance letter, include signed URL
-    let applicationWithUrl = application;
+    let applicationWithUrl = application ? { ...application, acceptance_letter_url: null } : null;
     if (application?.acceptance_letter_path) {
       try {
         const { data: signed, error: signedError } = await supabaseAdmin.storage

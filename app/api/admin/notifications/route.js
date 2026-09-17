@@ -20,7 +20,7 @@ async function requireAdmin(request) {
     return { ok: false, status: 500, body: { error: 'Admin lookup failed' } };
   }
 
-  if (!profiles || profiles.role !== 'admin') {
+  if (!profile || profile.role !== 'admin') {
     return { ok: false, status: 403, body: { error: `Forbidden: admin only (no admin role for ${user.email})` } };
   }
 

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
+import { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '../lib/LanguageContext';
 
 function buildMediaSrc(item) {
@@ -15,36 +16,40 @@ function isValidLink(value) {
   if (!value) return false;
   const trimmed = String(value).trim();
   if (!trimmed) return false;
-  if (/^(https?:\/\/|mailto:|tel:|\/|\.\/|\.\.\/)/i.test(trimmed)) return true;
-  try {
-    new URL(trimmed);
-    return true;
-  } catch {
-    return false;
-  }
+  return /^(https?:\/\/|mailto:|tel:)/i.test(trimmed) || /^\/(?!\/)/.test(trimmed);
 }
 
 export default function HomepageMediaShowcase() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isRtlLanguage = ['fa', 'ps', 'ar', 'ur'].includes(language);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [aspectRatios, setAspectRatios] = useState({});
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const [hoverPaused, setHoverPaused] = useState(false);
+  const isModalOpen = activeIndex >= 0;
+  const dialogRef = useRef(null);
+  const closeRef = useRef(null);
+  const headingRef = useRef(null);
 
   useEffect(() => {
     let mounted = true;
+    const controller = new AbortController();
 
     async function loadItems() {
+      setLoading(true);
+      setLoadError(false);
       try {
-        const response = await fetch('/api/homepage-media', { cache: 'no-store' });
+        const response = await fetch('/api/homepage-media', { cache: 'no-store', signal: controller.signal });
         if (!response.ok) throw new Error('Unable to load media');
         const data = await response.json();
+        if (!Array.isArray(data.items)) throw new Error('Invalid media response');
         if (mounted) {
-          setItems(data.items || []);
+          setItems(data.items);
         }
       } catch (error) {
-        console.error('Homepage media load error', error);
+        if (mounted && error.name !== 'AbortError') setLoadError(true);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -52,34 +57,26 @@ export default function HomepageMediaShowcase() {
 
     loadItems();
 
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const updateReducedMotion = () => setReducedMotion(mediaQuery.matches);
-
-    updateReducedMotion();
-
-    mediaQuery.addEventListener('change', updateReducedMotion);
-
     return () => {
       mounted = false;
-      mediaQuery.removeEventListener('change', updateReducedMotion);
+      controller.abort();
     };
-  }, []);
+  }, [reloadKey]);
 
   useEffect(() => {
-    if (activeIndex < 0) {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-      return;
-    }
-
+    if (!isModalOpen) return;
+    const previousFocus = document.activeElement;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
-
+    closeRef.current?.focus();
     return () => {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      previousFocus?.focus?.();
     };
-  }, [activeIndex]);
+  }, [isModalOpen]);
 
   useEffect(() => {
     const videos = document.querySelectorAll('.homepage-media-card video');
@@ -103,14 +100,25 @@ export default function HomepageMediaShowcase() {
     if (activeIndex < 0) return;
 
     const handleKeydown = (event) => {
+      if (event.key === 'Tab') {
+        const controls = [...(dialogRef.current?.querySelectorAll('button, a[href], video[controls], [tabindex="0"]') || [])].filter(el => !el.disabled && el.getClientRects().length);
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
       if (event.key === 'Escape') {
+        event.preventDefault();
         setActiveIndex(-1);
       }
-      if (event.key === 'ArrowRight') {
-        setActiveIndex((prev) => (prev + 1) % items.length);
-      }
-      if (event.key === 'ArrowLeft') {
-        setActiveIndex((prev) => (prev - 1 + items.length) % items.length);
+      // Native media controls and editable fields own their arrow keys.
+      const ownsArrowKeys = event.target instanceof Element && event.target.closest('video, input, textarea, select, [contenteditable="true"], [role="slider"]');
+      if (ownsArrowKeys || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+        event.preventDefault();
+        const isRtl = dialogRef.current && window.getComputedStyle(dialogRef.current).direction === 'rtl';
+        const step = (event.key === 'ArrowRight' ? 1 : -1) * (isRtl ? -1 : 1);
+        setActiveIndex((prev) => (prev + step + items.length) % items.length);
       }
     };
 
@@ -118,38 +126,52 @@ export default function HomepageMediaShowcase() {
     return () => window.removeEventListener('keydown', handleKeydown);
   }, [activeIndex, items.length]);
 
-  const displayItems = useMemo(() => {
-    if (items.length <= 1) return items;
-    return [...items, ...items];
-  }, [items]);
-
-  const shouldAnimate = !reducedMotion && items.length > 1 && !hoverPaused;
-
-  if (loading) {
-    return null;
-  }
-
-  if (!items.length) {
-    return null;
-  }
+  const displayItems = items.slice(0, 4);
+  const retryMedia = () => {
+    // This heading survives every loading/result state. Move focus only during
+    // the explicit retry action, never after a response when the user may have moved on.
+    headingRef.current?.focus({ preventScroll: true });
+    setReloadKey((key) => key + 1);
+  };
+  const rememberAspectRatio = (id, width, height) => {
+    if (!width || !height) return;
+    const ratio = Math.max(0.65, Math.min(2, width / height));
+    setAspectRatios((current) => current[id] === ratio ? current : { ...current, [id]: ratio });
+  };
 
   const activeItem = activeIndex >= 0 ? items[activeIndex] : null;
 
   return (
-    <section className="homepage-media-showcase section" id="homepage-media">
+    <section className="homepage-media-showcase section premium-media" id="homepage-media">
       <div className="container">
-        <div className="section-header section-header-centered">
+        <div className="premium-section-heading premium-section-heading-centered">
           <span className="section-label">{t('homepageMedia.label')}</span>
-          <h2>{t('homepageMedia.heading')}</h2>
+          <h2 ref={headingRef} tabIndex={-1}>{t('homepageMedia.heading')}</h2>
           <p>{t('homepageMedia.description')}</p>
         </div>
 
-        <div
-          className={`homepage-media-viewport ${shouldAnimate ? 'auto-scroll' : 'manual-scroll'}`}
-          onMouseEnter={() => setHoverPaused(true)}
-          onMouseLeave={() => setHoverPaused(false)}
-        >
-          <div className={`homepage-media-track ${shouldAnimate ? 'is-animating' : ''}`}>
+        {loading ? (
+          <div className="homepage-media-loading" aria-busy="true">
+            <p className="sr-only" role="status">{t('premium.mediaLoading')}</p>
+            <div className="homepage-media-track" aria-hidden="true">
+              {[0, 1, 2].map((index) => (
+                <div key={index} className="homepage-media-card homepage-media-skeleton">
+                  <div className="homepage-media-preview" />
+                  <div className="homepage-media-card-body"><span /><span /><span /></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : loadError || !items.length ? (
+          <div className="homepage-media-status" role="status">
+            <p>{t(loadError ? 'premium.mediaUnavailable' : 'premium.mediaEmpty')}</p>
+            {loadError ? (
+              <button className="button button-outline" type="button" onClick={retryMedia}>{t('premium.mediaRetry')}</button>
+            ) : null}
+          </div>
+        ) : (
+        <div className="homepage-media-viewport manual-scroll">
+          <div className="homepage-media-track">
             {displayItems.map((item, index) => {
               const isVideo = item.media_type === 'video';
               const mediaSrc = buildMediaSrc(item);
@@ -160,7 +182,7 @@ export default function HomepageMediaShowcase() {
                     type="button"
                     className="homepage-media-preview"
                     onClick={() => setActiveIndex(originalIndex)}
-                    aria-label={item.title || `Open ${item.media_type}`}
+                    aria-label={item.title || t('premium.mediaOpen')}
                   >
                     {isVideo ? (
                       <video
@@ -170,21 +192,24 @@ export default function HomepageMediaShowcase() {
                         muted
                         playsInline
                         preload="metadata"
-                        controls
+                        onLoadedMetadata={(event) => rememberAspectRatio(item.id, event.currentTarget.videoWidth, event.currentTarget.videoHeight)}
                       />
                     ) : (
-                      <img
+                      <Image
                         className="homepage-media-media"
                         src={mediaSrc}
-                        alt={item.title || 'Homepage media'}
-                        loading="lazy"
-                        decoding="async"
+                        alt={item.title || t('premium.mediaTitle')}
+                        fill
+                        sizes="(max-width: 700px) calc(100vw - 28px), (max-width: 991px) calc((100vw - 54px) / 2), (max-width: 1328px) calc((100vw - 84px) / 3), 415px"
+                        onLoad={(event) => rememberAspectRatio(item.id, event.currentTarget.naturalWidth, event.currentTarget.naturalHeight)}
                       />
                     )}
+                    <span className="homepage-media-open" aria-hidden="true">{t('premium.view')} <i>↗</i></span>
                   </button>
 
                   <div className="homepage-media-card-body">
-                    {item.title ? <h3>{item.title}</h3> : null}
+                    <span className="homepage-media-type">{t('premium.community')}</span>
+                    <h3>{item.title || t('premium.mediaTitle')}</h3>
                     {item.description ? <p>{item.description}</p> : null}
                     {item.button_text && item.button_link && isValidLink(item.button_link) ? (
                       <a href={item.button_link} className="button button-secondary homepage-media-button" target="_blank" rel="noreferrer">
@@ -197,17 +222,18 @@ export default function HomepageMediaShowcase() {
             })}
           </div>
         </div>
+        )}
       </div>
 
       {activeItem ? (
-        <div className="homepage-media-modal" role="dialog" aria-modal="true" aria-label="Media preview">
+        <div className="homepage-media-modal" ref={dialogRef} role="dialog" aria-modal="true" aria-label={activeItem.title || t('premium.mediaTitle')}>
           <div className="homepage-media-modal-backdrop" onClick={() => setActiveIndex(-1)} />
           <div className="homepage-media-modal-panel">
-            <button type="button" className="homepage-media-modal-close" onClick={() => setActiveIndex(-1)} aria-label="Close media preview">
+            <button type="button" ref={closeRef} className="homepage-media-modal-close" onClick={() => setActiveIndex(-1)} aria-label={t('form.close')}>
               ×
             </button>
 
-            <div className="homepage-media-modal-media">
+            <div className="homepage-media-modal-media" style={{ '--media-aspect-ratio': aspectRatios[activeItem.id] || 1.6 }}>
               {activeItem.media_type === 'video' ? (
                 <video
                   controls
@@ -216,25 +242,32 @@ export default function HomepageMediaShowcase() {
                   preload="metadata"
                   poster={activeItem.thumbnail_url || ''}
                   src={activeItem.media_url || ''}
+                  onLoadedMetadata={(event) => rememberAspectRatio(activeItem.id, event.currentTarget.videoWidth, event.currentTarget.videoHeight)}
                 />
               ) : (
-                <img src={activeItem.media_url || activeItem.thumbnail_url || ''} alt={activeItem.title || 'Media preview'} />
+                <Image
+                  src={activeItem.media_url || activeItem.thumbnail_url || ''}
+                  alt={activeItem.title || t('premium.mediaTitle')}
+                  fill
+                  sizes="(max-width: 1008px) calc(100vw - 48px), 960px"
+                  onLoad={(event) => rememberAspectRatio(activeItem.id, event.currentTarget.naturalWidth, event.currentTarget.naturalHeight)}
+                />
               )}
             </div>
 
             {(activeItem.title || activeItem.description) ? (
-              <div className="homepage-media-modal-info">
+              <div className="homepage-media-modal-info" tabIndex={0} role="region" aria-label={activeItem.title || t('premium.mediaTitle')}>
                 {activeItem.title ? <h3>{activeItem.title}</h3> : null}
                 {activeItem.description ? <p>{activeItem.description}</p> : null}
               </div>
             ) : null}
 
             <div className="homepage-media-modal-nav">
-              <button type="button" onClick={() => setActiveIndex((prev) => (prev - 1 + items.length) % items.length)} aria-label="Previous media">
-                ‹
+              <button type="button" onClick={() => setActiveIndex((prev) => (prev - 1 + items.length) % items.length)} aria-label={t('premium.mediaPrevious')}>
+                <span aria-hidden="true" dir="ltr">{isRtlLanguage ? '›' : '‹'}</span>
               </button>
-              <button type="button" onClick={() => setActiveIndex((prev) => (prev + 1) % items.length)} aria-label="Next media">
-                ›
+              <button type="button" onClick={() => setActiveIndex((prev) => (prev + 1) % items.length)} aria-label={t('premium.mediaNext')}>
+                <span aria-hidden="true" dir="ltr">{isRtlLanguage ? '‹' : '›'}</span>
               </button>
             </div>
           </div>

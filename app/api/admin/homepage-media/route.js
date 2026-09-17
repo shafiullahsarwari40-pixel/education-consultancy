@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { readBoundedBody, RequestError } from '../../_lib/request';
+
+const MAX_MEDIA_BYTES = 4 * 1024 * 1024;
+const MAX_MEDIA_REQUEST_BYTES = MAX_MEDIA_BYTES + 128 * 1024;
 
 function formatSupabaseError(error, defaultMessage = 'An internal error occurred.') {
   const message = error?.message || '';
@@ -33,25 +37,40 @@ function sanitizeLink(link) {
   if (!link) return null;
   const value = String(link).trim();
   if (!value) return null;
-  if (/^(https?:\/\/|mailto:|tel:|\/|\.\/|\.\.\/)/i.test(value)) return value;
-  try {
-    new URL(value);
-    return value;
-  } catch {
-    return null;
-  }
+  if (/^(https?:\/\/|mailto:|tel:|\/(?!\/)|\.\/|\.\.\/)/i.test(value)) return value;
+  return null;
 }
 
 function sanitizePayload(body) {
   return {
     media_type: body.media_type === 'video' ? 'video' : 'image',
-    title: body.title ? String(body.title).trim() : null,
-    description: body.description ? String(body.description).trim() : null,
-    button_text: body.button_text ? String(body.button_text).trim() : null,
+    title: body.title ? String(body.title).trim().slice(0, 200) : null,
+    description: body.description ? String(body.description).trim().slice(0, 3000) : null,
+    button_text: body.button_text ? String(body.button_text).trim().slice(0, 100) : null,
     button_link: sanitizeLink(body.button_link),
     is_published: Boolean(body.is_published),
     sort_order: Number.isFinite(Number(body.sort_order)) ? Number(body.sort_order) : 0,
   };
+}
+
+async function readMediaForm(request) {
+  const contentType = request.headers.get('content-type') || '';
+  if (!contentType.toLowerCase().startsWith('multipart/form-data')) throw new RequestError('Please submit a media upload form.', 415);
+  const body = await readBoundedBody(request, MAX_MEDIA_REQUEST_BYTES);
+  try {
+    return await new Response(body, { headers: { 'Content-Type': contentType } }).formData();
+  } catch {
+    throw new RequestError('The media upload could not be read.');
+  }
+}
+
+function hasMediaSignature(type, buffer) {
+  if (type === 'image/jpeg') return buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  if (type === 'image/png') return buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  if (type === 'image/webp') return buffer.subarray(0, 4).toString() === 'RIFF' && buffer.subarray(8, 12).toString() === 'WEBP';
+  if (type === 'video/mp4') return buffer.subarray(4, 8).toString() === 'ftyp';
+  if (type === 'video/webm') return buffer.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]));
+  return false;
 }
 
 export async function GET(request) {
@@ -74,7 +93,12 @@ export async function POST(request) {
   const authCheck = await requireAdmin(request);
   if (!authCheck.ok) return NextResponse.json(authCheck.body, { status: authCheck.status });
 
-  const formData = await request.formData();
+  let formData;
+  try {
+    formData = await readMediaForm(request);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof RequestError ? error.message : 'Invalid upload.' }, { status: error instanceof RequestError ? error.status : 400 });
+  }
   const file = formData.get('file');
   const mediaType = formData.get('media_type') === 'video' ? 'video' : 'image';
   const payload = sanitizePayload({
@@ -94,7 +118,6 @@ export async function POST(request) {
   const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
   const allowedVideoTypes = ['video/mp4', 'video/webm'];
   const fileType = file.type || '';
-  const maxSize = mediaType === 'video' ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
 
   if (mediaType === 'video' && !allowedVideoTypes.includes(fileType)) {
     return NextResponse.json({ error: 'Unsupported video type. Use MP4 or WebM.' }, { status: 400 });
@@ -102,14 +125,17 @@ export async function POST(request) {
   if (mediaType === 'image' && !allowedImageTypes.includes(fileType)) {
     return NextResponse.json({ error: 'Unsupported image type. Use JPG, PNG, or WebP.' }, { status: 400 });
   }
-  if (file.size > maxSize) {
-    return NextResponse.json({ error: `File is too large. Max ${mediaType === 'video' ? '100 MB' : '10 MB'}.` }, { status: 400 });
+  if (!file.size || file.size > MAX_MEDIA_BYTES) {
+    return NextResponse.json({ error: 'File must be between 1 byte and 4 MB.' }, { status: 400 });
   }
 
   const extension = file.name.split('.').pop()?.toLowerCase() || 'bin';
   const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
   const filePath = `homepage-media/${safeName}`;
   const arrayBuffer = await file.arrayBuffer();
+  if (!hasMediaSignature(fileType, Buffer.from(arrayBuffer).subarray(0, 16))) {
+    return NextResponse.json({ error: 'The file contents do not match the selected media type.' }, { status: 400 });
+  }
 
   const { error: uploadError } = await supabaseAdmin.storage.from('application-uploads').upload(filePath, new Uint8Array(arrayBuffer), {
     cacheControl: '3600',
@@ -124,16 +150,19 @@ export async function POST(request) {
   const { data: publicUrlData } = await supabaseAdmin.storage.from('application-uploads').getPublicUrl(filePath);
   const mediaUrl = publicUrlData?.publicUrl || null;
 
-const { data, error } = await supabaseAdmin.from('homepage_media').insert([{ ...payload, media_url: mediaUrl, media_path: filePath, thumbnail_url: mediaType === 'video' ? mediaUrl : null }]).select().single();
+  const { data, error } = await supabaseAdmin.from('homepage_media').insert([{ ...payload, media_url: mediaUrl, media_path: filePath, thumbnail_url: mediaType === 'video' ? mediaUrl : null }]).select().single();
 
-  if (error) return NextResponse.json({ error: formatSupabaseError(error, 'Unable to create homepage media item.') }, { status: 500 });
+  if (error) {
+    await supabaseAdmin.storage.from('application-uploads').remove([filePath]);
+    return NextResponse.json({ error: formatSupabaseError(error, 'Unable to create homepage media item.') }, { status: 500 });
+  }
   return NextResponse.json({ item: data });
 }
 
 async function parseBody(request) {
   const contentType = request.headers.get('content-type') || '';
   if (contentType.includes('multipart/form-data')) {
-    return request.formData();
+    return readMediaForm(request);
   }
 
   try {
@@ -148,7 +177,12 @@ export async function PATCH(request) {
   const authCheck = await requireAdmin(request);
   if (!authCheck.ok) return NextResponse.json(authCheck.body, { status: authCheck.status });
 
-  const body = await parseBody(request);
+  let body;
+  try {
+    body = await parseBody(request);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof RequestError ? error.message : 'Invalid request.' }, { status: error instanceof RequestError ? error.status : 400 });
+  }
   const id = body.id || (body.get && body.get('id'));
   if (!id) return NextResponse.json({ error: 'Missing item id' }, { status: 400 });
 
@@ -171,6 +205,7 @@ export async function PATCH(request) {
   });
 
   let updates = { ...payload };
+  let newMediaPath = null;
 
   if (file && typeof file !== 'string') {
     const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -183,15 +218,17 @@ export async function PATCH(request) {
     if (mediaType === 'image' && !allowedImageTypes.includes(fileType)) {
       return NextResponse.json({ error: 'Unsupported image type. Use JPG, PNG, or WebP.' }, { status: 400 });
     }
-    const maxSize = mediaType === 'video' ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return NextResponse.json({ error: `File is too large. Max ${mediaType === 'video' ? '100 MB' : '10 MB'}.` }, { status: 400 });
+    if (!file.size || file.size > MAX_MEDIA_BYTES) {
+      return NextResponse.json({ error: 'File must be between 1 byte and 4 MB.' }, { status: 400 });
     }
 
     const extension = file.name.split('.').pop()?.toLowerCase() || 'bin';
     const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
     const filePath = `homepage-media/${safeName}`;
     const arrayBuffer = await file.arrayBuffer();
+    if (!hasMediaSignature(fileType, Buffer.from(arrayBuffer).subarray(0, 16))) {
+      return NextResponse.json({ error: 'The file contents do not match the selected media type.' }, { status: 400 });
+    }
     const { error: uploadError } = await supabaseAdmin.storage.from('application-uploads').upload(filePath, new Uint8Array(arrayBuffer), {
       cacheControl: '3600',
       upsert: false,
@@ -213,14 +250,17 @@ export async function PATCH(request) {
       media_path: filePath,
       thumbnail_url: mediaType === 'video' ? publicUrlData.publicUrl : null,
     };
-
-    if (existing.media_path) {
-      await supabaseAdmin.storage.from('application-uploads').remove([existing.media_path]);
-    }
+    newMediaPath = filePath;
   }
 
   const { data, error } = await supabaseAdmin.from('homepage_media').update(updates).eq('id', id).select().single();
-  if (error) return NextResponse.json({ error: formatSupabaseError(error, 'Unable to update homepage media item.') }, { status: 500 });
+  if (error) {
+    if (newMediaPath) await supabaseAdmin.storage.from('application-uploads').remove([newMediaPath]);
+    return NextResponse.json({ error: formatSupabaseError(error, 'Unable to update homepage media item.') }, { status: 500 });
+  }
+  if (newMediaPath && existing.media_path?.startsWith('homepage-media/')) {
+    await supabaseAdmin.storage.from('application-uploads').remove([existing.media_path]);
+  }
   return NextResponse.json({ item: data });
 }
 

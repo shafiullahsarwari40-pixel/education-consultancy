@@ -1,918 +1,853 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { useLanguage } from '../lib/LanguageContext';
-import { translations } from '../lib/translations';
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "../lib/supabaseClient";
+import { useLanguage } from "../lib/LanguageContext";
+import { translations } from "../lib/translations";
 
-const universities = [
-  'Adıyaman University',
-  'Ankara Yıldırım Beyazıt University',
-  'Burdur Mehmet Akif Ersoy University',
-  'Kırıkkale University',
-  'Düzce University',
-  'Zonguldak Bülent Ecevit University',
-  'Kastamonu University',
-  'Uşak University',
-  'İzmir Katip Çelebi University',
-  'Mersin University',
-  'Ondokuz Mayıs University',
-  'Anadolu University',
-  'Karabük University',
+const UNIVERSITIES = [
+  "Adıyaman University",
+  "Ankara Yıldırım Beyazıt University",
+  "Burdur Mehmet Akif Ersoy University",
+  "Kırıkkale University",
+  "Düzce University",
+  "Zonguldak Bülent Ecevit University",
+  "Kastamonu University",
+  "Uşak University",
+  "İzmir Katip Çelebi University",
+  "Mersin University",
+  "Ondokuz Mayıs University",
+  "Anadolu University",
+  "Karabük University",
 ];
-
-const PROGRAMS = [
-  'Bachelor',
-  'Master',
-  'PhD',
-];
-
 const COUNTRIES = [
-  'Afghanistan','Albania','Algeria','Andorra','Angola','Argentina','Armenia','Australia','Austria','Azerbaijan',
-  'Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia',
-  'Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi','Cambodia','Cameroon','Canada',
-  'Cape Verde','Central African Republic','Chad','Chile','China','Colombia','Comoros','Congo','Costa Rica','Croatia',
-  'Cuba','Cyprus','Czech Republic','Denmark','Djibouti','Dominica','Dominican Republic','Ecuador','Egypt','El Salvador',
-  'Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia','Fiji','Finland','France','Gabon','Gambia','Georgia','Germany',
-  'Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras','Hungary','Iceland','India',
-  'Indonesia','Iran','Iraq','Ireland','Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kuwait','Kyrgyzstan',
-  'Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg','Macao','Madagascar',
-  'Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Moldova','Monaco',
-  'Mongolia','Montenegro','Morocco','Mozambique','Myanmar','Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua',
-  'Niger','Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan','Palau','Panama','Papua New Guinea','Paraguay',
-  'Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia','Rwanda','Saint Kitts and Nevis','Saint Lucia','Samoa',
-  'San Marino','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands',
-  'Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria',
-  'Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan',
-  'Tuvalu','Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay','Uzbekistan','Vanuatu','Vatican City',
-  'Venezuela','Vietnam','Yemen','Zambia','Zimbabwe',
+  "Afghanistan",
+  "Albania",
+  "Algeria",
+  "Andorra",
+  "Angola",
+  "Argentina",
+  "Armenia",
+  "Australia",
+  "Austria",
+  "Azerbaijan",
+  "Bahamas",
+  "Bahrain",
+  "Bangladesh",
+  "Barbados",
+  "Belarus",
+  "Belgium",
+  "Belize",
+  "Benin",
+  "Bhutan",
+  "Bolivia",
+  "Bosnia and Herzegovina",
+  "Botswana",
+  "Brazil",
+  "Brunei",
+  "Bulgaria",
+  "Burkina Faso",
+  "Burundi",
+  "Cambodia",
+  "Cameroon",
+  "Canada",
+  "Cape Verde",
+  "Central African Republic",
+  "Chad",
+  "Chile",
+  "China",
+  "Colombia",
+  "Comoros",
+  "Congo",
+  "Costa Rica",
+  "Croatia",
+  "Cuba",
+  "Cyprus",
+  "Czech Republic",
+  "Denmark",
+  "Djibouti",
+  "Dominica",
+  "Dominican Republic",
+  "Ecuador",
+  "Egypt",
+  "El Salvador",
+  "Equatorial Guinea",
+  "Eritrea",
+  "Estonia",
+  "Eswatini",
+  "Ethiopia",
+  "Fiji",
+  "Finland",
+  "France",
+  "Gabon",
+  "Gambia",
+  "Georgia",
+  "Germany",
+  "Ghana",
+  "Greece",
+  "Grenada",
+  "Guatemala",
+  "Guinea",
+  "Guinea-Bissau",
+  "Guyana",
+  "Haiti",
+  "Honduras",
+  "Hungary",
+  "Iceland",
+  "India",
+  "Indonesia",
+  "Iran",
+  "Iraq",
+  "Ireland",
+  "Israel",
+  "Italy",
+  "Jamaica",
+  "Japan",
+  "Jordan",
+  "Kazakhstan",
+  "Kenya",
+  "Kuwait",
+  "Kyrgyzstan",
+  "Laos",
+  "Latvia",
+  "Lebanon",
+  "Lesotho",
+  "Liberia",
+  "Libya",
+  "Liechtenstein",
+  "Lithuania",
+  "Luxembourg",
+  "Macao",
+  "Madagascar",
+  "Malawi",
+  "Malaysia",
+  "Maldives",
+  "Mali",
+  "Malta",
+  "Marshall Islands",
+  "Mauritania",
+  "Mauritius",
+  "Mexico",
+  "Moldova",
+  "Monaco",
+  "Mongolia",
+  "Montenegro",
+  "Morocco",
+  "Mozambique",
+  "Myanmar",
+  "Namibia",
+  "Nauru",
+  "Nepal",
+  "Netherlands",
+  "New Zealand",
+  "Nicaragua",
+  "Niger",
+  "Nigeria",
+  "North Korea",
+  "North Macedonia",
+  "Norway",
+  "Oman",
+  "Pakistan",
+  "Palau",
+  "Panama",
+  "Papua New Guinea",
+  "Paraguay",
+  "Peru",
+  "Philippines",
+  "Poland",
+  "Portugal",
+  "Qatar",
+  "Romania",
+  "Russia",
+  "Rwanda",
+  "Saint Kitts and Nevis",
+  "Saint Lucia",
+  "Samoa",
+  "San Marino",
+  "Saudi Arabia",
+  "Senegal",
+  "Serbia",
+  "Seychelles",
+  "Sierra Leone",
+  "Singapore",
+  "Slovakia",
+  "Slovenia",
+  "Solomon Islands",
+  "Somalia",
+  "South Africa",
+  "South Korea",
+  "South Sudan",
+  "Spain",
+  "Sri Lanka",
+  "Sudan",
+  "Suriname",
+  "Sweden",
+  "Switzerland",
+  "Syria",
+  "Taiwan",
+  "Tajikistan",
+  "Tanzania",
+  "Thailand",
+  "Timor-Leste",
+  "Togo",
+  "Tonga",
+  "Trinidad and Tobago",
+  "Tunisia",
+  "Turkey",
+  "Turkmenistan",
+  "Tuvalu",
+  "Uganda",
+  "Ukraine",
+  "United Arab Emirates",
+  "United Kingdom",
+  "United States",
+  "Uruguay",
+  "Uzbekistan",
+  "Vanuatu",
+  "Vatican City",
+  "Venezuela",
+  "Vietnam",
+  "Yemen",
+  "Zambia",
+  "Zimbabwe",
 ].sort();
+const DOCUMENTS = [
+  { key: "passport", label: "Passport" },
+  { key: "transcript", label: "Academic transcript" },
+  { key: "diploma", label: "Diploma / graduation certificate" },
+  { key: "exam_sheet", label: "Exam results" },
+  { key: "id_card", label: "National ID / Tazkira" },
+  { key: "photo", label: "Personal photograph" },
+];
+const STEPS = ["Your details", "Study plans", "Documents", "Review"];
+const MAX_FILE_SIZE = 4 * 1024 * 1024;
+const MAX_TOTAL_SIZE = 4 * 1024 * 1024;
+const formatSize = (size) => `${(size / 1024 / 1024).toFixed(1)} MB`;
 
-
-export default function ApplicationForm() {
-  const { t, language } = useLanguage();
-  const router = useRouter();
+export default function ApplicationForm({ session }) {
+  const { language } = useLanguage();
+  const headingRef = useRef(null);
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [countrySearch, setCountrySearch] = useState('');
-  const [programSearch, setProgramSearch] = useState('');
-  const [facultySearch, setFacultySearch] = useState('');
-  const [universitySearch, setUniversitySearch] = useState('');
-  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
-  const [showProgramDropdown, setShowProgramDropdown] = useState(false);
-  const [showFacultyDropdown, setShowFacultyDropdown] = useState(false);
-  const [showUniversityDropdown, setShowUniversityDropdown] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [session, setSession] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [fileSizeError, setFileSizeError] = useState('');
+  const [error, setError] = useState("");
+  const [submitted, setSubmitted] = useState(null);
+  const [consent, setConsent] = useState(false);
   const [formState, setFormState] = useState({
-    full_name: '',
-    email: '',
-    phone: '',
-    mother_name: '',
-    father_name: '',
-    address: '',
-    country: '',
-    program: '',
-    faculty: '',
-    university: '',
-    message: '',
-    passport: null,
-    transcript: null,
-    diploma: null,
-    exam_sheet: null,
-    id_card: null,
-    photo: null,
+    full_name: "",
+    email: session?.user?.email || "",
+    phone: "",
+    mother_name: "",
+    father_name: "",
+    address: "",
+    country: "",
+    program: "",
+    faculty: "",
+    university: "",
+    message: "",
   });
-  const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-  const MAX_TOTAL_UPLOAD_BYTES = 50 * 1024 * 1024;
-
-  const formatBytes = (bytes) => {
-    if (bytes < 1024) return `${bytes} B`;
-    const kb = bytes / 1024;
-    if (kb < 1024) return `${kb.toFixed(1)} KB`;
-    return `${(kb / 1024).toFixed(1)} MB`;
-  };
-
-  const getTotalFileSize = (files) =>
-    Object.values(files).reduce((total, file) => total + (file?.size || 0), 0);
-
-  const getDocumentFiles = () => ({
-    passport: formState.passport,
-    transcript: formState.transcript,
-    diploma: formState.diploma,
-    exam_sheet: formState.exam_sheet,
-    id_card: formState.id_card,
-    photo: formState.photo,
-  });
-
-  const uploadDocumentFile = async (applicationId, docType, file) => {
-    if (!file) return null;
-    if (!supabase) {
-      throw new Error('Upload client is not configured.');
-    }
-
-    const timestamp = Date.now();
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const filePath = `applications/${applicationId}/${docType}-${timestamp}-${safeName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('application-uploads')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-      });
-
-    if (uploadError) {
-      throw new Error(`Upload failed for ${docType}: ${uploadError.message}`);
-    }
-
-    const { data: publicUrlData, error: urlError } = await supabase.storage
-      .from('application-uploads')
-      .getPublicUrl(filePath);
-
-    if (urlError || !publicUrlData?.publicUrl) {
-      throw new Error(`Failed to generate public URL for ${docType}`);
-    }
-
-    return publicUrlData.publicUrl;
-  };
-
-  const filteredCountries = COUNTRIES.filter(c => 
-    c.toLowerCase().includes(countrySearch.toLowerCase())
+  const [files, setFiles] = useState({});
+  const totalSize = Object.values(files).reduce(
+    (sum, file) => sum + (file?.size || 0),
+    0,
   );
-
-  const filteredPrograms = PROGRAMS.filter(p => 
-    p.toLowerCase().includes(programSearch.toLowerCase())
+  const facultyOptions = Object.values(
+    translations[language]?.faculties || translations.en.faculties || {},
   );
-
-  const filteredUniversities = universities.filter(u => 
-    u.toLowerCase().includes(universitySearch.toLowerCase())
-  );
-
-  const facultyOptions = Object.entries(translations[language]?.faculties || {}).map(([key, label]) => ({
-    key,
-    label,
-  }));
-
-  const filteredFaculties = facultyOptions.filter((faculty) =>
-    faculty.label.toLowerCase().includes(facultySearch.toLowerCase())
+  const hasUnsavedChanges = Boolean(
+    formState.full_name || formState.phone || formState.message || totalSize,
   );
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const uniParam = params.get('uni');
-    if (uniParam) {
-      try {
-        const decoded = decodeURIComponent(uniParam);
-        setFormState((prev) => ({ ...prev, university: decoded }));
-      } catch (err) {
-        console.warn('Failed to decode uni param, using raw value', uniParam, err);
-        setFormState((prev) => ({ ...prev, university: uniParam }));
-      }
-    }
+    const university = new URLSearchParams(window.location.search).get("uni");
+    if (university) setFormState((previous) => ({ ...previous, university }));
   }, []);
 
   useEffect(() => {
-    (async () => {
-      if (!supabase) {
-        setAuthLoading(false);
-        return;
-      }
-      const { data } = await supabase.auth.getSession();
-      setSession(data?.session ?? null);
-      setAuthLoading(false);
-    })();
-  }, []);
+    if (!hasUnsavedChanges || submitted) return;
+    const warnBeforeLeaving = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeLeaving);
+    return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
+  }, [hasUnsavedChanges, submitted]);
 
-  useEffect(() => {
-    if (session?.user?.email) {
-      setFormState((prev) => ({
-        ...prev,
-        email: prev.email || session.user.email,
-      }));
-    }
-  }, [session]);
-
-  useEffect(() => {
-    // No reCAPTCHA required for application submission.
-  }, []);
-
-  function handleChange(event) {
+  function change(event) {
     const { name, value } = event.target;
-    setFormState((prev) => ({ ...prev, [name]: value }));
+    setFormState((previous) => ({ ...previous, [name]: value }));
   }
 
-  function handleCountrySelect(country) {
-    setFormState((prev) => ({ ...prev, country }));
-    setCountrySearch(country);
-    setShowCountryDropdown(false);
-  }
-
-  function handleProgramSelect(program) {
-    setFormState((prev) => ({ ...prev, program }));
-    setProgramSearch(program);
-    setShowProgramDropdown(false);
-  }
-
-  function handleFacultySelect(faculty) {
-    setFormState((prev) => ({ ...prev, faculty }));
-    setFacultySearch(faculty);
-    setShowFacultyDropdown(false);
-  }
-
-  function handleCountryBlur() {
-    setTimeout(() => setShowCountryDropdown(false), 200);
-  }
-
-  function handleProgramBlur() {
-    setTimeout(() => setShowProgramDropdown(false), 200);
-  }
-
-  function handleFacultyBlur() {
-    setTimeout(() => setShowFacultyDropdown(false), 200);
-  }
-
-  function handleUniversitySelect(university) {
-    setFormState((prev) => ({ ...prev, university }));
-    setUniversitySearch(university);
-    setShowUniversityDropdown(false);
-  }
-
-  function handleUniversityBlur() {
-    setTimeout(() => setShowUniversityDropdown(false), 200);
-  }
-
-  function handleCloseSuccessModal() {
-    setShowSuccessModal(false);
-    setFormState({
-      full_name: '',
-      email: '',
-      phone: '',
-      mother_name: '',
-      father_name: '',
-      address: '',
-      country: '',
-      program: '',
-      faculty: '',
-      university: (() => {
-        const raw = new URLSearchParams(window.location.search).get('uni') || '';
-        try {
-          return raw ? decodeURIComponent(raw) : '';
-        } catch (err) {
-          return raw;
-        }
-      })(),
-      message: '',
-      passport: null,
-      transcript: null,
-      diploma: null,
-      exam_sheet: null,
-      id_card: null,
-      photo: null,
+  function goTo(nextStep) {
+    setError("");
+    setStep(nextStep);
+    requestAnimationFrame(() => {
+      headingRef.current?.focus();
+      headingRef.current?.scrollIntoView({ block: "nearest" });
     });
-    router.refresh();
   }
 
-  function handleFileChange(event, documentType) {
-    const file = event.target.files[0] || null;
-    const existingFiles = { ...formState, [documentType]: file };
-    const totalSize = getTotalFileSize({
-      passport: existingFiles.passport,
-      transcript: existingFiles.transcript,
-      diploma: existingFiles.diploma,
-      exam_sheet: existingFiles.exam_sheet,
-      id_card: existingFiles.id_card,
-      photo: existingFiles.photo,
-    });
-
-    if (file && file.size > MAX_FILE_SIZE_BYTES) {
-      setFileSizeError(`File ${file.name} is too large (${formatBytes(file.size)}). Maximum file size is ${formatBytes(MAX_FILE_SIZE_BYTES)}.`);
+  function changeFile(event, key) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const rejectFile = (message) => {
+      setError(message);
+      event.target.value = "";
+    };
+    if (
+      ![
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+      ].includes(file.type)
+    ) {
+      rejectFile("Please use a PDF, JPG, PNG, WebP, or GIF file.");
       return;
     }
-
-    if (totalSize > MAX_TOTAL_UPLOAD_BYTES) {
-      setFileSizeError(`Total uploaded documents exceed ${formatBytes(MAX_TOTAL_UPLOAD_BYTES)}. Remove some files or upload smaller scans.`);
+    if (file.size === 0) {
+      rejectFile("This file is empty. Please choose another copy.");
       return;
     }
-
-    setFileSizeError('');
-    setFormState((prev) => ({ ...prev, [documentType]: file }));
+    if (file.size > MAX_FILE_SIZE) {
+      rejectFile(
+        `${file.name} is too large. Each file must be 4 MB or smaller.`,
+      );
+      return;
+    }
+    if (totalSize - (files[key]?.size || 0) + file.size > MAX_TOTAL_SIZE) {
+      rejectFile(
+        "Your documents total more than 4 MB. Please use smaller copies.",
+      );
+      return;
+    }
+    setError("");
+    setFiles((previous) => ({ ...previous, [key]: file }));
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
-
-    if (!session) {
-      setErrorMessage('Please sign in before submitting your application.');
+    if (loading || submitted) return;
+    if (step < 3) {
+      goTo(step + 1);
       return;
     }
-
-    const getErrorMessage = (error) => {
-      if (!error) return 'Unknown error';
-      if (typeof error === 'string') return error;
-      if (typeof error === 'object') {
-        return error.message || error.error || error.msg || JSON.stringify(error);
-      }
-      return String(error);
-    };
-
-    const { full_name, email, phone, mother_name, father_name, address, country, program, university, message, passport, transcript, diploma, exam_sheet, id_card, photo } = formState;
-    if (!full_name || !email || !phone) {
-      setErrorMessage('Please complete full name, email, and phone.');
+    setError("");
+    if (
+      !formState.full_name.trim() ||
+      !formState.email.trim() ||
+      !formState.phone.trim()
+    ) {
+      setStep(0);
+      setError("Please complete your full name, email, and phone number.");
       return;
     }
-
-    if (fileSizeError) {
-      setErrorMessage(fileSizeError);
+    if (!consent) {
+      setError(
+        "Please confirm your details and privacy consent before submitting.",
+      );
       return;
     }
-
-    const totalSize = getTotalFileSize({ passport, transcript, diploma, exam_sheet, id_card, photo });
-    if (totalSize > MAX_TOTAL_UPLOAD_BYTES) {
-      setErrorMessage(`Attachments are too large. Maximum total upload size is ${formatBytes(MAX_TOTAL_UPLOAD_BYTES)}.`);
-      return;
-    }
-
     setLoading(true);
-
     try {
-      // Send application data + files to server endpoint (FormData for multipart file upload)
-      const formData = new FormData();
-      formData.append('full_name', full_name);
-      formData.append('email', email);
-      formData.append('phone', phone);
-      formData.append('mother_name', mother_name);
-      formData.append('father_name', father_name);
-      formData.append('address', address);
-      formData.append('country', country);
-      formData.append('program', program);
-      formData.append('university', university);
-      formData.append('message', message);
-
-      // Append files
-      const documentTypes = ['passport', 'transcript', 'diploma', 'exam_sheet', 'id_card', 'photo'];
-      const documents = { passport, transcript, diploma, exam_sheet, id_card, photo };
-      for (const docType of documentTypes) {
-        if (documents[docType]) {
-          formData.append(docType, documents[docType]);
-        }
+      if (!supabase)
+        throw new Error(
+          "Applications are temporarily unavailable. Please contact admissions.",
+        );
+      const { data, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !data?.session)
+        throw new Error(
+          "Your session has expired. Sign in again in another tab, then return here to submit without losing your details.",
+        );
+      const body = new FormData();
+      for (const [key, value] of Object.entries(formState)) {
+        if (key === "faculty" || key === "message") continue;
+        body.append(key, value.trim());
       }
-
-      const res = await fetch('/api/submit', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-        body: formData,
+      body.append(
+        "message",
+        [
+          formState.faculty ? `Preferred subject: ${formState.faculty}` : "",
+          formState.message.trim(),
+        ]
+          .filter(Boolean)
+          .join("\n\n"),
+      );
+      for (const { key } of DOCUMENTS)
+        if (files[key]) body.append(key, files[key]);
+      const response = await fetch("/api/submit", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${data.session.access_token}` },
+        body,
       });
-
-      const text = await res.text();
-      let result;
-      if (text) {
-        try {
-          result = JSON.parse(text);
-        } catch (jsonError) {
-          const normalized = text.replace(/\s+/g, ' ').trim();
-          if (/request entity too large|413/i.test(normalized)) {
-            throw new Error('Upload is too large. Please reduce attachment sizes and try again.');
-          }
-          throw new Error(text || 'Unexpected server response');
-        }
+      const result = await response.json().catch(() => null);
+      if (!response.ok) {
+        if (response.status === 413)
+          throw new Error(
+            "Your upload was too large for the server. Please reduce the document sizes and try again.",
+          );
+        if (response.status === 401)
+          throw new Error(
+            "Your session has expired. Sign in again in another tab, then return here.",
+          );
+        throw new Error(
+          result?.error ||
+            "We could not confirm your submission. Check your application status before trying again, or contact admissions.",
+        );
       }
-
-      if (!res.ok) {
-        throw new Error(result?.error || 'Server error saving application');
-      }
-
-      setSuccessMessage(t('form.success'));
-      setShowSuccessModal(true);
-      setFormState({
-        full_name: '',
-        email: '',
-        phone: '',
-        mother_name: '',
-        father_name: '',
-        address: '',
-        country: '',
-        program: '',
-        faculty: '',
-        university: decodeURIComponent(new URLSearchParams(window.location.search).get('uni') || ''),
-        message: '',
-        passport: null,
-        transcript: null,
-        diploma: null,
-        exam_sheet: null,
-        id_card: null,
-        photo: null,
-      });
-      event.target.reset();
-      
-      // Delay redirect by 3 seconds to let user see success message
-      setTimeout(() => {
-        router.push('/student/dashboard');
-      }, 3000);
-      return;
-    } catch (error) {
-      console.error('Application submit error:', error);
-      const errorMessageText =
-        (typeof error === 'string' && error) ||
-        (error && typeof error === 'object' && 'message' in error && error.message) ||
-        (error && typeof error === 'object' && 'error' in error && error.error) ||
-        'Unable to submit application right now. Please try again later.';
-      setErrorMessage(errorMessageText);
+      if (!result?.success)
+        throw new Error(
+          "We could not confirm your submission. Please check your application status before trying again.",
+        );
+      setSubmitted(result);
+    } catch (err) {
+      setError(
+        err.message ||
+          "We could not connect. Check your application status before retrying.",
+      );
     } finally {
       setLoading(false);
     }
   }
 
-  if (authLoading) {
-    return <div>{t('form.loadingAuthStatus')}</div>;
-  }
-
-  if (!session) {
+  function field(name, label, options = {}) {
     return (
-      <div className="application-login-prompt" style={{ padding: '2rem', border: '1px solid #ddd', borderRadius: '1rem', background: '#fafafa' }}>
-        <h2>{t('form.loginRequiredTitle')}</h2>
-        <p>{t('form.loginRequiredDescription')}</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: 360 }}>
-          <Link href="/student/login" className="button button-primary button-large">
-            {t('form.studentLogin')}
-          </Link>
-          <Link href="/student/signup" className="button button-secondary button-large">
-            {t('form.createStudentAccount')}
-          </Link>
-        </div>
-      </div>
+      <label
+        className={`student-form-field ${options.full ? "full-row" : ""}`}
+        htmlFor={`application-${name}`}
+        key={name}
+      >
+        {label}
+        {options.required ? " *" : ""}
+        <input
+          id={`application-${name}`}
+          name={name}
+          type={options.type || "text"}
+          value={formState[name]}
+          onChange={change}
+          required={options.required}
+          autoComplete={options.autoComplete}
+          maxLength={options.maxLength || 200}
+          placeholder={options.placeholder}
+          disabled={loading}
+        />
+        {options.hint && <small>{options.hint}</small>}
+      </label>
     );
   }
 
-  return (
-    <>
-      <div style={{ marginBottom: '1rem', padding: '1rem', background: '#f5f8ff', borderRadius: '0.75rem' }}>
-        <p style={{ margin: 0 }}>{t('form.signedInAs')} <strong>{session.user.email}</strong></p>
-        <p style={{ margin: '0.5rem 0 0 0' }}>
-          {t('form.afterSubmissionInfo')} <Link href="/student/dashboard">{t('form.yourStudentDashboard')}</Link>.
+  if (submitted)
+    return (
+      <section className="student-state-card" role="status">
+        <span className="student-state-symbol" aria-hidden="true">
+          ✓
+        </span>
+        <span className="student-eyebrow">APPLICATION RECEIVED</span>
+        <h1>
+          You have taken
+          <br />
+          <em>the first step.</em>
+        </h1>
+        <p>
+          Your application has been saved. Our admissions team will review your
+          information and update your student portal as it progresses.
         </p>
-      </div>
-      <form className="form-grid application-form" onSubmit={handleSubmit}>
-        <input type="hidden" name="university" value={formState.university} />
-
-        <div>
-          <label className="form-label">
-            {t('form.firstName')} <span className="form-required">*</span>
-          </label>
-          <input
-            name="full_name"
-            type="text"
-            value={formState.full_name}
-            onChange={handleChange}
-            placeholder={t('form.firstNamePlaceholder')}
-            className="form-input"
-            required
-          />
+        {submitted.applicationId && (
+          <p>
+            Reference: <strong>{submitted.applicationId}</strong>
+          </p>
+        )}
+        <div className="student-action-row">
+          <Link className="student-primary" href="/student/result">
+            View my application <span aria-hidden="true">↗</span>
+          </Link>
         </div>
+      </section>
+    );
 
-        <div>
-          <label className="form-label">
-            {t('form.email')} <span className="form-required">*</span>
-          </label>
-          <input
-            name="email"
-            type="email"
-            value={formState.email}
-            onChange={handleChange}
-            placeholder={t('form.emailPlaceholder')}
-            className="form-input"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="form-label">
-            {t('form.phone')} <span className="form-required">*</span>
-          </label>
-          <input
-            name="phone"
-            type="tel"
-            value={formState.phone}
-            onChange={handleChange}
-            placeholder={t('form.phonePlaceholder')}
-            className="form-input"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="form-label">{t('form.motherName')}</label>
-          <input
-            name="mother_name"
-            type="text"
-            value={formState.mother_name}
-            onChange={handleChange}
-            placeholder={t('form.motherNamePlaceholder')}
-            className="form-input"
-          />
-        </div>
-
-        <div>
-          <label className="form-label">{t('form.fatherName')}</label>
-          <input
-            name="father_name"
-            type="text"
-            value={formState.father_name}
-            onChange={handleChange}
-            placeholder={t('form.fatherNamePlaceholder')}
-            className="form-input"
-          />
-        </div>
-
-        <div className="full-row">
-          <label className="form-label">{t('form.address')}</label>
-          <textarea
-            name="address"
-            rows="3"
-            value={formState.address}
-            onChange={handleChange}
-            placeholder={t('form.addressPlaceholder')}
-            className="form-textarea"
-          />
-        </div>
-
-        <div>
-          <label className="form-label">{t('form.country')}</label>
-          <div className="searchable-select">
-            <input
-              type="text"
-              name="country"
-              placeholder={t('form.searchCountryPlaceholder')}
-              value={countrySearch}
-              onChange={(e) => {
-                const value = e.target.value;
-                setCountrySearch(value);
-                setFormState((prev) => ({ ...prev, country: value }));
-                setShowCountryDropdown(true);
-              }}
-              onFocus={() => setShowCountryDropdown(true)}
-              onBlur={handleCountryBlur}
-              className="form-input search-input"
-            />
-            {showCountryDropdown && (
-              <div className="dropdown-list">
-                {filteredCountries.length > 0 ? (
-                  filteredCountries.map((country) => (
-                    <div
-                      key={country}
-                      className={`dropdown-item ${formState.country === country ? 'selected' : ''}`}
-                      onMouseDown={() => handleCountrySelect(country)}
-                    >
-                      {country}
-                    </div>
-                  ))
-                ) : (
-                  <div className="dropdown-item disabled">{t('form.noCountriesFound')}</div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="form-label">{t('form.program')}</label>
-          <div className="searchable-select">
-            <input
-              type="text"
-              name="program"
-              placeholder={t('form.searchProgramPlaceholder')}
-              value={programSearch}
-              onChange={(e) => {
-                const value = e.target.value;
-                setProgramSearch(value);
-                setFormState((prev) => ({ ...prev, program: value }));
-                setShowProgramDropdown(true);
-              }}
-              onFocus={() => setShowProgramDropdown(true)}
-              onBlur={handleProgramBlur}
-              className="form-input search-input"
-            />
-            {showProgramDropdown && (
-              <div className="dropdown-list">
-                {filteredPrograms.length > 0 ? (
-                  filteredPrograms.map((program) => (
-                    <div
-                      key={program}
-                      className={`dropdown-item ${formState.program === program ? 'selected' : ''}`}
-                      onMouseDown={() => handleProgramSelect(program)}
-                    >
-                      {program}
-                    </div>
-                  ))
-                ) : (
-                  <div className="dropdown-item disabled">{t('form.noProgramsFound')}</div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="form-label">{t('form.faculty')}</label>
-          <div className="searchable-select">
-            <input
-              type="text"
-              name="faculty"
-              placeholder={t('form.selectFaculty')}
-              value={facultySearch}
-              onChange={(e) => {
-                const value = e.target.value;
-                setFacultySearch(value);
-                setFormState((prev) => ({ ...prev, faculty: value }));
-                setShowFacultyDropdown(true);
-              }}
-              onFocus={() => setShowFacultyDropdown(true)}
-              onBlur={handleFacultyBlur}
-              className="form-input search-input"
-            />
-            {showFacultyDropdown && (
-              <div className="dropdown-list">
-                {filteredFaculties.length > 0 ? (
-                  filteredFaculties.map(({ key, label }) => (
-                    <div
-                      key={key}
-                      className={`dropdown-item ${formState.faculty === label ? 'selected' : ''}`}
-                      onMouseDown={() => handleFacultySelect(label)}
-                    >
-                      {label}
-                    </div>
-                  ))
-                ) : (
-                  <div className="dropdown-item disabled">{t('form.noFacultiesFound')}</div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="form-label">{t('form.university')}</label>
-          <div className="searchable-select">
-            <input
-              type="text"
-              name="university"
-              placeholder={t('form.searchUniversityPlaceholder')}
-              value={universitySearch}
-              onChange={(e) => {
-                const value = e.target.value;
-                setUniversitySearch(value);
-                setFormState((prev) => ({ ...prev, university: value }));
-                setShowUniversityDropdown(true);
-              }}
-              onFocus={() => setShowUniversityDropdown(true)}
-              onBlur={handleUniversityBlur}
-              className="form-input search-input"
-            />
-            {showUniversityDropdown && (
-              <div className="dropdown-list">
-                {filteredUniversities.length > 0 ? (
-                  filteredUniversities.map((university) => (
-                    <div
-                      key={university}
-                      className={`dropdown-item ${formState.university === university ? 'selected' : ''}`}
-                      onMouseDown={() => handleUniversitySelect(university)}
-                    >
-                      {university}
-                    </div>
-                  ))
-                ) : (
-                  <div className="dropdown-item disabled">{t('form.noUniversitiesFound')}</div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div style={{ gridColumn: '1 / -1' }}>
-          <label className="form-label">{t('form.message')}</label>
-          <textarea
-            name="message"
-            rows="4"
-            value={formState.message}
-            onChange={handleChange}
-            placeholder={t('form.messagePlaceholder')}
-            className="form-textarea"
-          />
-        </div>
-
-        <div style={{ gridColumn: '1 / -1' }}>
-          <label className="form-label">{t('form.documents')}</label>
-          <div className="file-upload-grid">
-            {[
-              { key: 'passport', labelKey: 'form.passport' },
-              { key: 'transcript', labelKey: 'form.transcript' },
-              { key: 'diploma', labelKey: 'form.diploma' },
-              { key: 'exam_sheet', labelKey: 'form.examSheet' },
-              { key: 'id_card', labelText: t('form.idCard') },
-              { key: 'photo', labelText: t('form.photo') },
-            ].map(({ key, labelKey, labelText }) => {
-              const selected = Boolean(formState[key]);
-              const label = labelText || (labelKey ? t(labelKey) : '');
-              const inputId = `file-input-${key}`;
-
-              return (
-                <div
-                  key={key}
-                  className={`file-upload-card ${selected ? 'selected' : ''}`}
-                  onClick={() => document.getElementById(inputId)?.click()}
-                >
-                  <div className="card-top">
-                    <div className="file-upload-icon">📄</div>
-                    <div className="file-upload-title">{label}</div>
-                  </div>
-
-                  <div className="card-body">
-                    {selected ? (
-                      <div className="file-preview">{formState[key].name}</div>
-                    ) : (
-                      <div className="file-placeholder">{t('form.noFile')}</div>
-                    )}
-                  </div>
-
-                  <div className="card-footer">
-                    <button
-                      type="button"
-                      className="button button-outline upload-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        document.getElementById(inputId)?.click();
-                      }}
-                    >
-                      {selected ? t('form.change') : t('form.upload')}
-                    </button>
-                    {selected && (
-                      <button
-                        type="button"
-                        className="button button-secondary remove-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setFormState((prev) => ({ ...prev, [key]: null }));
-                        }}
-                      >
-                        {t('form.remove')}
-                      </button>
-                    )}
-                  </div>
-
-                  <input
-                    id={inputId}
-                    type="file"
-                    accept="application/pdf,image/*"
-                    onChange={(e) => handleFileChange(e, key)}
-                    style={{ display: 'none' }}
-                  />
-                </div>
-              );
+  return (
+    <form className="student-form" onSubmit={handleSubmit} aria-busy={loading}>
+      <ol className="student-form-steps" aria-label="Application progress">
+        {STEPS.map((label, index) => (
+          <li
+            key={label}
+            className={index <= step ? "active" : ""}
+            aria-current={index === step ? "step" : undefined}
+          >
+            <span>
+              {index < step ? "✓" : String(index + 1).padStart(2, "0")}
+            </span>
+            {label}
+          </li>
+        ))}
+      </ol>
+      <div className="student-form-body">
+        <h2 ref={headingRef} tabIndex={-1}>
+          {
+            [
+              "Let’s get to know you.",
+              "What would you like to study?",
+              "Bring your story together.",
+              "Ready for your next chapter?",
+            ][step]
+          }
+        </h2>
+        <p className="student-form-intro">
+          {
+            [
+              "Use your details as shown on your official documents. * Required fields.",
+              "Share your preferences. It is okay if you are still exploring.",
+              "Add the documents you have available. Our team will advise if more are needed.",
+              "Check your details carefully. You can edit any section before sending.",
+            ][step]
+          }
+        </p>
+        {step === 0 && (
+          <div className="student-form-grid">
+            {field("full_name", "Full name", {
+              required: true,
+              autoComplete: "name",
+              placeholder: "As shown on your passport",
+              full: true,
+            })}
+            {field("email", "Email address", {
+              required: true,
+              type: "email",
+              autoComplete: "email",
+              maxLength: 254,
+            })}
+            {field("phone", "Phone number", {
+              required: true,
+              type: "tel",
+              autoComplete: "tel",
+              placeholder: "Include your country code",
+              maxLength: 40,
+            })}
+            <label className="student-form-field" htmlFor="application-country">
+              Country
+              <input
+                id="application-country"
+                name="country"
+                list="application-countries"
+                autoComplete="country-name"
+                value={formState.country}
+                onChange={change}
+                placeholder="Start typing your country"
+                maxLength={100}
+              />
+              <datalist id="application-countries">
+                {COUNTRIES.map((country) => (
+                  <option key={country} value={country} />
+                ))}
+              </datalist>
+            </label>
+            {field("address", "Home address", {
+              autoComplete: "street-address",
+              maxLength: 500,
+            })}
+            {field("mother_name", "Mother’s full name", {
+              autoComplete: "off",
+            })}
+            {field("father_name", "Father’s full name", {
+              autoComplete: "off",
             })}
           </div>
-        </div>
-
-        {errorMessage && (
-          <div style={{
-            gridColumn: '1 / -1',
-            padding: '1rem',
-            background: '#fee',
-            color: '#c33',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: '1rem'
-          }}>
-            {errorMessage}
+        )}
+        {step === 1 && (
+          <div className="student-form-grid">
+            <label className="student-form-field" htmlFor="application-program">
+              Degree level
+              <select
+                id="application-program"
+                name="program"
+                value={formState.program}
+                onChange={change}
+              >
+                <option value="">I would like guidance</option>
+                <option value="Bachelor">Bachelor’s degree</option>
+                <option value="Master">Master’s degree</option>
+                <option value="PhD">Doctoral degree / PhD</option>
+              </select>
+            </label>
+            <label className="student-form-field" htmlFor="application-faculty">
+              Preferred subject
+              <input
+                id="application-faculty"
+                name="faculty"
+                list="application-faculties"
+                value={formState.faculty}
+                onChange={change}
+                placeholder="Choose or type a subject"
+                maxLength={200}
+              />
+              <datalist id="application-faculties">
+                {facultyOptions.map((label) => (
+                  <option key={label} value={label} />
+                ))}
+              </datalist>
+            </label>
+            <label
+              className="student-form-field full-row"
+              htmlFor="application-university"
+            >
+              Preferred university
+              <input
+                id="application-university"
+                name="university"
+                list="application-universities"
+                value={formState.university}
+                onChange={change}
+                placeholder="Choose a university, or leave blank for guidance"
+                maxLength={200}
+              />
+              <datalist id="application-universities">
+                {UNIVERSITIES.map((university) => (
+                  <option key={university} value={university} />
+                ))}
+              </datalist>
+              <small>
+                Your choice is a preference. Admission and program availability
+                depend on the university.
+              </small>
+            </label>
+            <label
+              className="student-form-field full-row"
+              htmlFor="application-message"
+            >
+              Anything else we should know?
+              <textarea
+                id="application-message"
+                name="message"
+                rows={4}
+                value={formState.message}
+                onChange={change}
+                maxLength={4500}
+                placeholder="Tell us about your interests, qualifications, preferred intake, or questions."
+              />
+            </label>
           </div>
         )}
-        {fileSizeError && !errorMessage && (
-          <div style={{
-            gridColumn: '1 / -1',
-            padding: '1rem',
-            background: '#fff4e5',
-            color: '#8a4f00',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: '1rem'
-          }}>
-            {fileSizeError}
-          </div>
-        )}
-
-        <div className="full-row form-submit-row">
-          <button
-            type="submit"
-            className="button button-primary button-large button-full-width"
-            disabled={loading || Boolean(fileSizeError)}
-          >
-            {loading ? t('form.submitting') : t('form.submit')}
-          </button>
-        </div>
-      </form>
-
-      {showSuccessModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: 'var(--radius-lg)',
-            padding: '2rem',
-            maxWidth: '500px',
-            width: '90%',
-            textAlign: 'center',
-            boxShadow: 'var(--shadow-lg)'
-          }}>
-            <div style={{
-              fontSize: '3rem',
-              marginBottom: '1rem',
-              color: 'var(--secondary)'
-            }}>
-              ✓
-            </div>
-            <h2 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>{t('form.successTitle')}</h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>{t('form.successMsg')}</p>
-
-            <div style={{ background: 'var(--bg-light)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}>
-              <p style={{ margin: '0.5rem 0' }}>
-                {t('form.afterSubmitInfo')}
-              </p>
-            </div>
-
-            <div style={{ marginBottom: '1rem', textAlign: 'left' }}>
-              <p style={{ fontWeight: '600', marginBottom: '0.5rem' }}>📧 {t('form.emailLabel')}</p>
-              <a
-                href="mailto:horizon@horizon-edu.net?subject=Education%20Consultation%20Request"
-                style={{ color: 'var(--secondary)' }}
-              >
-                horizon@horizon-edu.net
-              </a>
-            </div>
-
-            <div style={{ marginBottom: '1rem', textAlign: 'left' }}>
-              <p style={{ fontWeight: '600', marginBottom: '0.5rem' }}>💬 {t('form.phone')}</p>
-              <a
-                href="https://api.whatsapp.com/send?phone=905515227371&text=Hello%20Horizon%20Team"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: 'var(--secondary)' }}
-              >
-                +90 (551) 522-7371
-              </a>
-              <div style={{ marginTop: '0.5rem' }}>
-                <a
-                  href="https://t.me/horizonedu"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: 'var(--secondary)' }}
+        {step === 2 && (
+          <>
+            <div className="student-document-grid">
+              {DOCUMENTS.map(({ key, label }) => (
+                <div
+                  className={`student-document ${files[key] ? "selected" : ""}`}
+                  key={key}
                 >
-                  {t('form.telegramLinkText')}
-                </a>
-              </div>
+                  <h3
+                    className="student-document-title"
+                    id={`document-title-${key}`}
+                  >
+                    <span aria-hidden="true">{files[key] ? "✓" : "↥"}</span>
+                    {label}
+                  </h3>
+                  <p
+                    className="student-document-name"
+                    id={`document-selection-${key}`}
+                    aria-live="polite"
+                  >
+                    {files[key]
+                      ? `${files[key].name} · ${formatSize(files[key].size)}`
+                      : "No document selected"}
+                  </p>
+                  <input
+                    id={`document-${key}`}
+                    className="student-document-input"
+                    type="file"
+                    hidden
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    accept="application/pdf,image/jpeg,image/png,image/webp,image/gif"
+                    onChange={(event) => changeFile(event, key)}
+                    aria-describedby="document-guidance"
+                  />
+                  <button
+                    className="student-document-choose"
+                    type="button"
+                    aria-label={`${files[key] ? "Replace" : "Choose"} ${label.toLowerCase()}`}
+                    aria-describedby={`document-selection-${key} document-guidance`}
+                    onClick={() =>
+                      document.getElementById(`document-${key}`)?.click()
+                    }
+                  >
+                    {files[key] ? "Replace file" : "Choose file"}
+                  </button>
+                  {files[key] && (
+                    <button
+                      className="student-document-remove"
+                      type="button"
+                      onClick={() => {
+                        setFiles((previous) => ({ ...previous, [key]: null }));
+                        const input = document.getElementById(
+                          `document-${key}`,
+                        );
+                        if (input) input.value = "";
+                        setError("");
+                      }}
+                    >
+                      Remove {label.toLowerCase()}
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
-
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-              {t('form.emailNote')}
+            <p className="student-upload-note" id="document-guidance">
+              PDF, JPG, PNG, WebP, or GIF. Up to 4 MB per file and 4 MB in
+              total.
+              <br />
+              Selected: {formatSize(totalSize)} of 4 MB. Files are sent only
+              when you submit the application.
             </p>
-
-            <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
-              <button
-                onClick={() => {
-                  setShowSuccessModal(false);
-                  router.push('/student/result');
-                }}
-                className="button button-primary button-large"
-                style={{ width: '100%' }}
-              >
-                {t('nav.seeResult')}
-              </button>
-              <button
-                onClick={handleCloseSuccessModal}
-                className="button button-secondary button-large"
-                style={{ width: '100%' }}
-              >
-                {t('form.close') || 'Close'}
-              </button>
+          </>
+        )}
+        {step === 3 && (
+          <>
+            <section className="student-review-section">
+              <div className="student-review-heading">
+                <h3>Your details</h3>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => goTo(0)}
+                >
+                  Edit details
+                </button>
+              </div>
+              <dl className="student-definition">
+                {[
+                  ["Full name", formState.full_name],
+                  ["Email", formState.email],
+                  ["Phone", formState.phone],
+                  ["Country", formState.country],
+                  ["Home address", formState.address],
+                  ["Mother’s name", formState.mother_name],
+                  ["Father’s name", formState.father_name],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>{value || "Not provided"}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+            <section className="student-review-section">
+              <div className="student-review-heading">
+                <h3>Study preferences</h3>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => goTo(1)}
+                >
+                  Edit preferences
+                </button>
+              </div>
+              <dl className="student-definition">
+                {[
+                  ["Degree", formState.program],
+                  ["Subject", formState.faculty],
+                  ["University", formState.university],
+                  ["Additional notes", formState.message],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>{value || "To discuss with your advisor"}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+            <section className="student-review-section">
+              <div className="student-review-heading">
+                <h3>Your documents</h3>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => goTo(2)}
+                >
+                  Edit documents
+                </button>
+              </div>
+              {totalSize > 0 ? (
+                <ul className="student-review-docs">
+                  {DOCUMENTS.filter(({ key }) => files[key]).map(
+                    ({ key, label }) => (
+                      <li key={key}>✓ {label}</li>
+                    ),
+                  )}
+                </ul>
+              ) : (
+                <p className="student-panel-note">
+                  No documents attached. Our team may request them to proceed.
+                </p>
+              )}
+            </section>
+            <label className="student-consent student-review-consent">
+              <input
+                type="checkbox"
+                required
+                checked={consent}
+                onChange={(event) => setConsent(event.target.checked)}
+                disabled={loading}
+              />
+              <span>
+                I confirm that these details are accurate and have read the{" "}
+                <Link href="/privacy" target="_blank">
+                  privacy policy
+                </Link>{" "}
+                and{" "}
+                <Link href="/terms" target="_blank">
+                  terms of service
+                </Link>
+                .
+              </span>
+            </label>
+          </>
+        )}
+      </div>
+      {error && (
+        <div className="student-notice error" role="alert">
+          {error}
+          {step === 3 && (
+            <div>
+              <Link href="/student/result" target="_blank">
+                Check application status ↗
+              </Link>{" "}
+              ·{" "}
+              <Link href="/student/auth" target="_blank">
+                Sign in ↗
+              </Link>
             </div>
-          </div>
+          )}
         </div>
       )}
-    </>
+      <div className="student-form-actions">
+        {step > 0 ? (
+          <button
+            type="button"
+            className="student-secondary"
+            onClick={() => goTo(step - 1)}
+            disabled={loading}
+          >
+            ← Back
+          </button>
+        ) : (
+          <p>Step 1 of 4 · Your information</p>
+        )}
+        <button type="submit" className="student-primary" disabled={loading}>
+          {loading ? (
+            <>
+              <span className="student-spinner" />
+              Submitting…
+            </>
+          ) : (
+            <>
+              {step === 3 ? "Submit application" : "Continue"}{" "}
+              <span aria-hidden="true">↗</span>
+            </>
+          )}
+        </button>
+      </div>
+    </form>
   );
 }

@@ -1,0 +1,19 @@
+.page { min-height: 100svh; padding: 40px max(6vw, 24px); background: radial-gradient(ellipse at 100% 10%, #17493f 0, transparent 45%), #071a2f; color: #fff; display: flex; flex-direction: column; }
+.brand { color: #fff; font-size: 24px; letter-spacing: .18em; font-weight: 800; text-decoration: none; width: fit-content; line-height: 1.2; }
+.brand span { display: block; font-size: 8px; font-weight: 600; letter-spacing: .22em; margin-top: 6px; color: #cbd6de; }
+.content { width: min(100%, 810px); margin: auto 0; padding: 90px 0; }
+.eyebrow { display: block; color: #d9bf86; font-size: 12px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 26px; }
+.content h1 { color: #fff; font-family: var(--font-display), Georgia, serif; font-size: clamp(44px, 7vw, 94px); line-height: 1.08; letter-spacing: -.045em; margin: 0 0 28px; }
+.content p { color: #becbd8; max-width: 550px; font-size: 17px; line-height: 1.8; margin: 0 0 34px; }
+.actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.primary, .secondary { border-radius: 8px; padding: 16px 24px; font-size: 14px; font-weight: 700; text-decoration: none; font-family: inherit; cursor: pointer; }
+.primary { background: #d9bf86; border: 1px solid #d9bf86; color: #071a2f; display: inline-flex; gap: 32px; align-items: center; }
+.secondary { color: #fff; border: 1px solid #7c909f; background: transparent; }
+.primary:hover { background: #ead5a9; }
+.secondary:hover { background: #ffffff12; }
+.page a:focus-visible, .page button:focus-visible { outline: 3px solid #d9bf86; outline-offset: 5px; }
+.links { margin-top: 42px; display: flex; flex-wrap: wrap; gap: 24px; }
+.links a, .support { color: #bccbd8; font-size: 13px; text-underline-offset: 5px; }
+.support { display: inline-block; margin-top: 36px; }
+.bottom { color: #9eafbe; font-size: 12px; padding-bottom: 6px; }
+@media (max-width: 480px) { .page { padding-top: 28px; } .content { padding: 65px 0; } .content p { font-size: 15px; } .actions { align-items: stretch; flex-direction: column; } .primary, .secondary { text-align: center; justify-content: center; } }

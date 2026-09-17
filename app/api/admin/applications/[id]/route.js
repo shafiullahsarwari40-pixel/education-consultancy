@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
+import { parseDocumentReference } from '../../../../../lib/documentStorage';
+import { readJson, textField, RequestError } from '../../../_lib/request';
 
 async function requireAdmin(request) {
   const auth = request.headers.get('authorization') || '';
@@ -37,7 +39,7 @@ function parseStoragePath(publicUrl) {
 }
 
 async function maybeSignedUrl(publicUrl) {
-  const storageInfo = parseStoragePath(publicUrl);
+  const storageInfo = parseDocumentReference(publicUrl);
   if (!storageInfo) return publicUrl;
   const { bucket, objectPath } = storageInfo;
   const { data, error } = await supabaseAdmin.storage.from(bucket).createSignedUrl(objectPath, 60);
@@ -79,9 +81,9 @@ export async function GET(request, { params }) {
   const convertedDocuments = documentRecord
     ? Object.fromEntries(
         Object.entries(documentRecord).map(([key, value]) => {
-          if (typeof value === 'string' && value.startsWith('http')) {
+          if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('storage://'))) {
             try {
-              const storageInfo = parseStoragePath(value);
+              const storageInfo = parseDocumentReference(value);
               if (storageInfo) {
                 const downloadUrl = `/api/admin/document?publicUrl=${encodeURIComponent(value)}`;
                 return [key, downloadUrl];
@@ -110,7 +112,16 @@ export async function PATCH(request, { params }) {
     console.error('Invalid application id received for PATCH:', id, 'from', request.url);
     return NextResponse.json({ error: `Invalid application id: ${String(id)}`, received: request.url }, { status: 400 });
   }
-  const body = await request.json();
+  let body;
+  try {
+    body = await readJson(request);
+    if (body.status && !['submitted', 'evaluating', 'accepted', 'rejected'].includes(body.status)) {
+      throw new RequestError('Choose a valid application status.');
+    }
+    if (typeof body.admin_note !== 'undefined') body.admin_note = textField(body.admin_note, 'Admin note', 5000);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof RequestError ? error.message : 'Invalid request.' }, { status: error instanceof RequestError ? error.status : 400 });
+  }
   const { status, admin_note } = body;
   if (!status && typeof admin_note === 'undefined') {
     return NextResponse.json({ error: 'Missing status or admin note' }, { status: 400 });

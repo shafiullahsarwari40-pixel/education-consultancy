@@ -72,14 +72,19 @@ Replace `your.email@example.com` with your actual admin email.
 Your `.env.local` file should have:
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-valid-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your-key
+SUPABASE_SECRET_KEY=sb_secret_your-key
 ```
 
 **IMPORTANT:** If you're getting "Invalid API key" errors:
-1. Go to **Settings** > **API** in Supabase Console
-2. Copy the **anon** key and update `.env.local`
+1. Go to **Settings** > **API Keys** in Supabase Console
+2. Create/copy a publishable key for the browser and a separate secret key for
+   the server. Never commit the secret key or name it `NEXT_PUBLIC_*`.
 3. Restart your dev server: `npm run dev`
+
+Legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` variables
+remain accepted only to support a zero-downtime migration. Disable the legacy
+keys after every environment is confirmed on the new key pair.
 
 ---
 

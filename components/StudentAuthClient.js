@@ -1,199 +1,417 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { useLanguage } from '../lib/LanguageContext';
-import { supabase } from '../lib/supabaseClient';
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useLanguage } from "../lib/LanguageContext";
+import { supabase } from "../lib/supabaseClient";
+import {
+  buildStudentRecoveryPath,
+  getSafeStudentRedirect,
+} from "../lib/studentRedirects.mjs";
+import "../app/student-experience.css";
 
-export default function StudentAuthClient() {
+export default function StudentAuthClient({ initialMode = "login" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/student/result';
-  
+  const redirect = getSafeStudentRedirect(searchParams.get("redirect"));
   const { t } = useLanguage();
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(initialMode === "signup");
+  const [isResetRequest, setIsResetRequest] = useState(false);
+  const isRecovery = searchParams.get("mode") === "recovery";
+  const [canRecover, setCanRecover] = useState(false);
+  const [passwordUpdated, setPasswordUpdated] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [session, setSession] = useState(null);
   const [checkingSession, setCheckingSession] = useState(true);
+  const [message, setMessage] = useState(null);
 
   useEffect(() => {
-    if (!supabase) {
-      setMessage(t('auth.errorSupabaseNotConfigured'));
-      setCheckingSession(false);
-      return;
-    }
-
-    (async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (data?.session) {
-          setSession(data.session);
-          router.push(redirect);
+    let active = true;
+    async function checkSession() {
+      if (!supabase) {
+        if (active) {
+          setMessage({
+            type: "error",
+            text: "Student sign-in is temporarily unavailable. Please contact our admissions team for help.",
+          });
+          setCheckingSession(false);
         }
-      } catch (err) {
-        console.error('Session check error:', err);
-      } finally {
-        setCheckingSession(false);
-      }
-    })();
-  }, [router, redirect]);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setLoading(true);
-    setMessage('');
-
-    if (!email || !password) {
-      setMessage(t('auth.password_required'));
-      setLoading(false);
-      return;
-    }
-
-    try {
-      let result;
-      if (isSignUp) {
-        const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback?returnTo=/student/dashboard` : 'https://horizoneducon.com/auth/callback?returnTo=/student/dashboard';
-        result = await supabase.auth.signUp(
-          { email, password },
-          { emailRedirectTo: redirectUrl }
-        );
-      } else {
-        result = await supabase.auth.signInWithPassword({ email, password });
-      }
-
-      const { data, error } = result;
-
-      if (error) {
-        setMessage(error.message);
-        setLoading(false);
         return;
       }
-
-      if (isSignUp) {
-        if (data?.user) {
-          setMessage(t('auth.success_signup'));
-          setEmail('');
-          setPassword('');
-          setLoading(false);
-          setTimeout(() => setIsSignUp(false), 3000);
-        }
-      } else {
-        if (data?.session) {
-          setSession(data.session);
-          router.push(redirect);
-        }
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (active && isRecovery) {
+          setCanRecover(Boolean(data?.session));
+          if (!data?.session)
+            setMessage({
+              type: "error",
+              text: "This password-reset link has expired or could not be verified. Request a new link to continue.",
+            });
+        } else if (active && data?.session) router.replace(redirect);
+      } catch {
+        if (active)
+          setMessage({
+            type: "error",
+            text: "We could not check your session. You can try signing in below.",
+          });
+      } finally {
+        if (active) setCheckingSession(false);
       }
-    } catch (err) {
-      console.error('Auth error:', err);
-      setMessage(err?.message || t('auth.errorTryAgain'));
+    }
+    checkSession();
+    return () => {
+      active = false;
+    };
+  }, [router, redirect, isRecovery]);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    if (loading || !supabase) return;
+    setLoading(true);
+    setMessage(null);
+    try {
+      if (isRecovery) {
+        if (!canRecover)
+          throw new Error("Please request a new password-reset link.");
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+        setPasswordUpdated(true);
+        setPassword("");
+        setMessage({
+          type: "success",
+          text: "Your password has been updated. You can continue where you left off.",
+        });
+        return;
+      }
+      if (isResetRequest) {
+        const { error } = await supabase.auth.resetPasswordForEmail(
+          email.trim(),
+          {
+            redirectTo: `${window.location.origin}/auth/callback?returnTo=${encodeURIComponent(buildStudentRecoveryPath(redirect))}`,
+          },
+        );
+        if (error) throw error;
+        setMessage({
+          type: "success",
+          text: "If an account exists for this email, you will receive a password-reset link. Check your inbox and spam folder.",
+        });
+        return;
+      }
+      const credentials = { email: email.trim(), password };
+      const result = isSignUp
+        ? await supabase.auth.signUp({
+            ...credentials,
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback?returnTo=${encodeURIComponent(redirect)}`,
+            },
+          })
+        : await supabase.auth.signInWithPassword(credentials);
+      if (result.error) throw result.error;
+      if (result.data?.session) {
+        router.replace(redirect);
+        return;
+      }
+      if (isSignUp && result.data?.user) {
+        setMessage({
+          type: "success",
+          text: "Check your inbox for the next step. If email confirmation is required, follow the link before signing in. Already registered? Sign in with your existing password.",
+        });
+        setPassword("");
+      } else {
+        setMessage({
+          type: "error",
+          text: "We could not complete sign-in. Please try again.",
+        });
+      }
+    } catch (error) {
+      const text = /rate limit|too many requests/i.test(error?.message || "")
+        ? "Too many attempts. Please wait a little before trying again, or contact admissions for help."
+        : error?.message ||
+          "We could not connect. Check your connection and try again.";
+      setMessage({ type: "error", text });
+    } finally {
       setLoading(false);
     }
-  }
-
-  if (checkingSession) {
-    return (
-      <div style={{ display: 'grid', placeItems: 'center', minHeight: '80vh' }}>
-        <p>{t('common.loading')}</p>
-      </div>
-    );
   }
 
   return (
-    <main className="section" style={{ minHeight: '80vh' }}>
-      <div className="container" style={{ maxWidth: 560, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem' }}>{t('auth.login')}</h2>
-          <p style={{ margin: '0', color: '#666', fontSize: '0.95rem' }}>
-            {t('auth.authDescription')}
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
-          <label style={{ display: 'grid', gap: '0.5rem' }}>
-            <span style={{ fontWeight: 600, color: '#333' }}>{t('auth.email')}</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t('auth.emailPlaceholder')}
-              className="form-input"
-              required
-              disabled={loading}
-            />
-          </label>
-
-          <label style={{ display: 'grid', gap: '0.5rem' }}>
-            <span style={{ fontWeight: 600, color: '#333' }}>{t('auth.password')}</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t('auth.passwordPlaceholder')}
-              className="form-input"
-              required
-              disabled={loading}
-            />
-          </label>
-
-          <button
-            type="submit"
-            className="button button-primary button-large"
-            disabled={loading}
-            style={{ marginTop: '0.5rem' }}
-          >
-            {loading ? t('auth.processing') : isSignUp ? t('auth.submitSignup') : t('auth.submitLogin')}
-          </button>
-        </form>
-
-        {message && (
-          <div style={{
-            marginTop: '1.5rem',
-            padding: '1rem',
-            borderRadius: '0.75rem',
-            background: message.includes('successfully') || message.includes('created') ? '#e8f5e9' : '#ffebee',
-            color: message.includes('successfully') || message.includes('created') ? '#2e7d32' : '#c62828',
-            fontSize: '0.9rem',
-            lineHeight: 1.6,
-          }}>
-            {message}
-          </div>
-        )}
-
-        <div style={{
-          marginTop: '2rem',
-          paddingTop: '2rem',
-          borderTop: '1px solid #e0e0e0',
-          textAlign: 'center',
-        }}>
-          <p style={{ margin: '0 0 1rem 0', color: '#666' }}>
-            {isSignUp ? t('auth.alreadyHaveAccount') : t('auth.noAccount')}
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setMessage('');
-              setEmail('');
-              setPassword('');
-            }}
-            className="button button-secondary"
-          >
-            {isSignUp ? t('auth.signInInstead') : t('auth.createAccountInstead')}
-          </button>
-        </div>
-
-        <div style={{ marginTop: '2rem', textAlign: 'center', color: '#999', fontSize: '0.85rem' }}>
+    <main id="main-content" className="student-experience student-auth">
+      <header className="student-topbar">
+        <Link className="student-brand" href="/" aria-label="Horizon home">
+          Horizon<span>EDUCATIONAL CONSULTANCY</span>
+        </Link>
+        <Link href="/#contact" className="student-help-link">
+          Need a hand? <span>Talk to us ↗</span>
+        </Link>
+      </header>
+      <div className="student-auth-layout">
+        <section className="student-auth-story">
+          <span className="student-eyebrow">YOUR NEXT CHAPTER</span>
+          <h1>
+            A world of possibility.
+            <br />
+            <em>One place to begin.</em>
+          </h1>
           <p>
-            <Link href="/" style={{ color: '#0755ff', textDecoration: 'none' }}>
-              {t('common.backToHome')}
-            </Link>
+            Your university journey, with a team beside you and a clear view of
+            what comes next.
           </p>
-        </div>
+          <ol className="student-benefits">
+            <li>
+              <span>01</span>
+              <div>
+                <strong>Build your application</strong>
+                <p>Share your goals and documents in one place.</p>
+              </div>
+            </li>
+            <li>
+              <span>02</span>
+              <div>
+                <strong>Follow every step</strong>
+                <p>See your application status as our team updates it.</p>
+              </div>
+            </li>
+            <li>
+              <span>03</span>
+              <div>
+                <strong>Get ready for what is next</strong>
+                <p>Access your decision and available acceptance letter.</p>
+              </div>
+            </li>
+          </ol>
+          <div className="student-story-note">
+            <span aria-hidden="true">✦</span> Based in Istanbul. Here for your
+            future.
+          </div>
+        </section>
+        <section className="student-auth-card" aria-labelledby="auth-heading">
+          {!isRecovery && (
+            <div
+              className="student-auth-tabs"
+              role="group"
+              aria-label="Account options"
+            >
+              <button
+                type="button"
+                aria-pressed={!isSignUp}
+                className={!isSignUp ? "active" : ""}
+                disabled={loading}
+                onClick={() => {
+                  setIsSignUp(false);
+                  setIsResetRequest(false);
+                  setMessage(null);
+                }}
+              >
+                Sign in
+              </button>
+              <button
+                type="button"
+                aria-pressed={isSignUp}
+                className={isSignUp ? "active" : ""}
+                disabled={loading}
+                onClick={() => {
+                  setIsSignUp(true);
+                  setIsResetRequest(false);
+                  setMessage(null);
+                }}
+              >
+                Create account
+              </button>
+            </div>
+          )}
+          <span className="student-eyebrow">STUDENT PORTAL</span>
+          <h2 id="auth-heading">
+            {isRecovery
+              ? "A fresh start."
+              : isResetRequest
+                ? "Let’s get you back in."
+                : isSignUp
+                  ? "Your future starts here."
+                  : "Welcome back."}
+          </h2>
+          <p className="student-auth-intro">
+            {isRecovery
+              ? "Choose a new, unique password for your account."
+              : isResetRequest
+                ? "Enter your student email to request a password-reset link."
+                : isSignUp
+                  ? "Create your account to begin your application."
+                  : "Sign in to continue your university journey."}
+          </p>
+          {checkingSession ? (
+            <div className="student-loading" role="status">
+              <span className="student-spinner" />
+              Checking your student session…
+            </div>
+          ) : (
+            <form
+              className="student-auth-form"
+              onSubmit={handleSubmit}
+              aria-busy={loading}
+            >
+              {!isRecovery && (
+                <label htmlFor="student-email">
+                  {t("auth.email")}
+                  <input
+                    id="student-email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    required
+                    maxLength={254}
+                    value={email}
+                    disabled={loading}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="you@example.com"
+                  />
+                </label>
+              )}
+              {!isResetRequest && !passwordUpdated && (
+                <label htmlFor="student-password">
+                  {t("auth.password")}
+                  <span className="student-password-field">
+                    <input
+                      id="student-password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete={
+                        isSignUp || isRecovery
+                          ? "new-password"
+                          : "current-password"
+                      }
+                      required
+                      minLength={isSignUp || isRecovery ? 8 : undefined}
+                      value={password}
+                      disabled={loading || (isRecovery && !canRecover)}
+                      onChange={(event) => setPassword(event.target.value)}
+                      aria-describedby={
+                        isSignUp || isRecovery ? "password-hint" : undefined
+                      }
+                      placeholder={
+                        isSignUp || isRecovery
+                          ? "Create a strong password"
+                          : "Enter your password"
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showPassword ? "Hide" : "Show"}
+                    </button>
+                  </span>
+                </label>
+              )}
+              {(isSignUp || isRecovery) && !passwordUpdated && (
+                <p id="password-hint" className="student-field-hint">
+                  Use at least 8 characters. A longer, unique password is
+                  better.
+                </p>
+              )}
+              {isSignUp && !isRecovery && (
+                <label className="student-consent">
+                  <input type="checkbox" required disabled={loading} />
+                  <span>
+                    I agree to the{" "}
+                    <Link href="/terms" target="_blank">
+                      terms of service
+                    </Link>{" "}
+                    and have read the{" "}
+                    <Link href="/privacy" target="_blank">
+                      privacy policy
+                    </Link>
+                    .
+                  </span>
+                </label>
+              )}
+              {!isSignUp && !isRecovery && !isResetRequest && (
+                <button
+                  className="student-forgot-password"
+                  type="button"
+                  onClick={() => {
+                    setIsResetRequest(true);
+                    setMessage(null);
+                  }}
+                >
+                  Forgot your password?
+                </button>
+              )}
+              {message && (
+                <div
+                  className={`student-notice ${message.type}`}
+                  role={message.type === "error" ? "alert" : "status"}
+                >
+                  {message.text}
+                </div>
+              )}
+              {passwordUpdated ? (
+                <Link href={redirect} className="student-primary">
+                  {redirect.startsWith("/apply")
+                    ? "Continue to my application ↗"
+                    : "Continue to my portal ↗"}
+                </Link>
+              ) : (
+                <button
+                  type="submit"
+                  className="student-primary"
+                  disabled={loading || !supabase || (isRecovery && !canRecover)}
+                >
+                  {loading ? (
+                    <>
+                      <span className="student-spinner" />
+                      {t("auth.processing")}
+                    </>
+                  ) : (
+                    <>
+                      {isRecovery
+                        ? "Save new password"
+                        : isResetRequest
+                          ? "Send reset link"
+                          : isSignUp
+                            ? "Create my account"
+                            : "Sign in"}
+                      <span aria-hidden="true">↗</span>
+                    </>
+                  )}
+                </button>
+              )}
+              {isRecovery && !canRecover && (
+                <Link
+                  href={`/student/auth?redirect=${encodeURIComponent(redirect)}`}
+                  className="student-secondary"
+                >
+                  Return to sign in
+                </Link>
+              )}
+            </form>
+          )}
+          <p className="student-auth-support">
+            Having trouble signing in?{" "}
+            <Link href="/#contact">Contact admissions</Link>
+          </p>
+          <div className="student-auth-bottom">
+            <span aria-hidden="true">◇</span> Your application. Your next
+            chapter.
+          </div>
+        </section>
       </div>
+      <footer className="student-page-footer">
+        <span>Horizon Educational Consultancy</span>
+        <div>
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/terms">Terms</Link>
+          <Link href="/">Back to website ↗</Link>
+        </div>
+      </footer>
     </main>
   );
 }

@@ -1,127 +1,72 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
 import { useLanguage } from '../lib/LanguageContext';
-
-const heroSlides = [
-  {
-    src: '/images/hero-bg.jpg',
-    alt: 'Students on a Turkish university campus at sunset',
-  },
-  {
-    src: '/images/university-campus-2.webp',
-    alt: 'International students enjoying campus life in Turkey',
-  },
-  {
-    src: '/images/international-students.webp',
-    alt: 'Diverse students learning together at a university',
-  },
-  {
-    src: '/images/graduation-students.jpg',
-    alt: 'Graduating international students celebrating success',
-  },
-  {
-    src: '/images/classroom.webp',
-    alt: 'Classroom scene with students and modern learning environment',
-  },
-  {
-    src: '/images/university-campus-1.webp',
-    alt: 'University campus buildings with students walking outside',
-  },
-];
 
 export default function Hero() {
   const { t } = useLanguage();
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveIndex((prevIndex) => (prevIndex + 1) % heroSlides.length);
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   return (
-    <section id="hero" className="hero section">
-      <div className="hero-slider" aria-live="polite">
-        {heroSlides.map((slide, index) => (
-          <div key={slide.src} className={`hero-slide ${index === activeIndex ? 'active' : ''}`}>
-            <Image
-              src={slide.src}
-              alt={slide.alt}
-              fill
-              sizes="100vw"
-              style={{ objectFit: 'cover' }}
-              priority={index === activeIndex}
-            />
-          </div>
-        ))}
-      </div>
+    <section id="hero" className="premium-hero">
+      <div className="premium-hero-orbit premium-hero-orbit-one" aria-hidden="true" />
+      <div className="premium-hero-orbit premium-hero-orbit-two" aria-hidden="true" />
 
-      <div className="container hero-grid">
-        <div className="hero-copy">
-          <span className="hero-badge">{t('hero.badge')}</span>
+      <div className="container premium-hero-grid">
+        <div className="premium-hero-copy">
+          <span className="premium-eyebrow">
+            <span aria-hidden="true" />
+            {t('premium.based')} · {t('premium.admissions')}
+          </span>
           <h1>{t('hero.title')}</h1>
-          <p>
-            {t('hero.description')}
-          </p>
-          <div className="hero-actions">
+          <p className="premium-hero-lead">{t('hero.description')}</p>
+
+          <div className="premium-hero-actions">
             <a href="/apply" className="button button-primary button-large">
               {t('hero.applyBtn')}
+              <span aria-hidden="true">↗</span>
             </a>
             <a
               href="https://api.whatsapp.com/send?phone=905515227371&text=Hello%20Horizon%20Team"
               target="_blank"
               rel="noopener noreferrer"
-              className="button button-secondary button-large"
+              className="button button-ghost-light button-large"
             >
               {t('hero.whatsappBtn')}
             </a>
           </div>
 
-          <div className="hero-stats">
-            <div className="stat-item">
-              <span className="stat-number">{t('hero.stat1')}</span>
-              <span className="stat-label">{t('hero.stat1Label')}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">{t('hero.stat2')}</span>
-              <span className="stat-label">{t('hero.stat2Label')}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">{t('hero.stat3')}</span>
-              <span className="stat-label">{t('hero.stat3Label')}</span>
-            </div>
-          </div>
         </div>
 
-        <div className="hero-panel">
-          <div className="hero-card">
-            <p style={{ fontSize: '0.875rem', color: 'var(--secondary)', marginBottom: '1rem' }}>{t('hero.trusted')}</p>
-            <h2>{t('hero.path')}</h2>
-            <p>{t('hero.pathDesc')}</p>
-            
-            <div className="hero-card-items">
-              <div className="hero-card-item">
-                <h3>{t('hero.guidance')}</h3>
-                <p>{t('hero.guidanceDesc')}</p>
-              </div>
-              <div className="hero-card-item">
-                <h3>{t('hero.documents')}</h3>
-                <p>{t('hero.documentsDesc')}</p>
-              </div>
-              <div className="hero-card-item">
-                <h3>{t('hero.assistance')}</h3>
-                <p>{t('hero.assistanceDesc')}</p>
-              </div>
+        <div className="premium-hero-visual" role="group" aria-label="Study in Türkiye with Horizon">
+          <div className="premium-hero-photo">
+            <Image
+              src="/images/hero-istanbul.webp"
+              alt="Istanbul University campus with Turkish flags"
+              fill
+              priority
+              unoptimized
+              sizes="(max-width: 900px) 100vw, 48vw"
+            />
+            <div className="premium-photo-caption">
+              <span>Türkiye</span>
+              <strong>{t('premium.admissions')}</strong>
             </div>
+          </div>
+
+          <div className="premium-hero-plan-card">
+            <span className="premium-plan-kicker">{t('premium.plan')}</span>
+            <div className="premium-plan-progress" aria-hidden="true"><span /></div>
+            <div className="premium-plan-row is-active"><span>01</span><strong>{t('premium.profile')}</strong><em>{t('premium.ready')}</em></div>
+            <div className="premium-plan-row"><span>02</span><strong>{t('premium.match')}</strong><em>{t('premium.next')}</em></div>
+            <div className="premium-plan-row"><span>03</span><strong>{t('premium.application')}</strong><em>{t('premium.planned')}</em></div>
           </div>
         </div>
       </div>
 
-      <div className="scroll-indicator"></div>
+      <a className="premium-scroll-cue" href="#services" aria-label="Explore Horizon services">
+        <span>{t('premium.explore')}</span>
+        <i aria-hidden="true">↓</i>
+      </a>
     </section>
   );
 }

@@ -52,7 +52,7 @@ export async function GET(request) {
     .maybeSingle();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Your application could not be loaded. Please try again.' }, { status: 500 });
   }
 
   let acceptance_letter_url = null;
@@ -66,5 +66,14 @@ export async function GET(request) {
     }
   }
 
-  return NextResponse.json({ application: application ? { ...application, acceptance_letter_url } : null });
+  let documents = [];
+  if (application) {
+    const { data: documentRow, error: documentError } = await supabaseAdmin.from('application_documents')
+      .select('passport_url, transcript_url, diploma_url, exam_sheet_url, id_card_url, photo_url')
+      .eq('application_id', application.id).limit(1).maybeSingle();
+    if (!documentError && documentRow) {
+      documents = Object.entries(documentRow).filter(([, value]) => Boolean(value)).map(([key]) => key.replace(/_url$/, ''));
+    }
+  }
+  return NextResponse.json({ application: application ? { ...application, acceptance_letter_url } : null, documents });
 }

@@ -1,0 +1,62 @@
+.horizon-language-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 18px;
+  row-gap: 0;
+  margin-block: 0 26px;
+  padding: 10px 16px;
+  border: 1px solid #d9e3dc;
+  border-radius: 8px;
+  background: #f1f5f0;
+  color: #40574a;
+  font-family: var(--font-sans, sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.7;
+  text-align: start;
+}
+
+.horizon-language-notice > span {
+  flex: 1 1 320px;
+}
+
+.horizon-language-notice[dir="rtl"] {
+  font-family: var(--font-arabic), Tahoma, sans-serif;
+}
+
+.horizon-language-notice.horizon-language-notice > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  gap: 4px;
+  color: #245d45;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.horizon-language-notice.horizon-language-notice > a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+.horizon-language-notice--dark {
+  border-color: #456172;
+  background: #132d40;
+  color: #dce9e2;
+}
+
+.horizon-language-notice--dark.horizon-language-notice > a {
+  color: #bfe9cf;
+}
+
+@media (max-width: 600px) {
+  .horizon-language-notice {
+    padding: 10px 13px;
+    margin-block-end: 22px;
+  }
+}

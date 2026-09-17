@@ -31,11 +31,11 @@ export default function Footer() {
           <div className="footer-section">
             <h4>{t('footer.quickLinks')}</h4>
             <ul>
-              <li><a href="#about">{t('footer.about')}</a></li>
-              <li><a href="#services">{t('footer.services')}</a></li>
+              <li><a href="/">{t('footer.about')}</a></li>
               <li><a href="#universities">{t('footer.universities')}</a></li>
-              <li><a href="#programs">{t('footer.programs')}</a></li>
               <li><a href="/apply">{t('footer.applyNow')}</a></li>
+              <li><a href="/student/result">{t('nav.seeResult')}</a></li>
+              <li><a href="#contact">{t('nav.contact')}</a></li>
             </ul>
           </div>
 
@@ -56,7 +56,7 @@ export default function Footer() {
             <h4>{t('footer.contactTitle')}</h4>
             <ul>
               <li>
-                <a href="mailto:horizon@horizon-edu.net?subject=Education%20Consultation%20Request">📧 {t('footer.email')}</a>
+                <a dir="ltr" href="mailto:horizon@horizon-edu.net?subject=Education%20Consultation%20Request">📧 {t('footer.email')}</a>
               </li>
               <li>
                 <a
@@ -72,7 +72,7 @@ export default function Footer() {
                   rel="noopener noreferrer"
                 >✈️ {t('footer.telegram')}</a>
               </li>
-              <li><a href="tel:+905515227371">📞 {t('footer.phone')}</a></li>
+              <li><a dir="ltr" href="tel:+905515227371">📞 {t('footer.phone')}</a></li>
               <li>📍 {t('footer.address')}</li>
             </ul>
             <div className="footer-social">

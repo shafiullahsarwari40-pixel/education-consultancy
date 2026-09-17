@@ -696,12 +696,18 @@ h3 {
   color: var(--muted);
   font-size: 0.9rem;
   line-height: 1.2;
+}
+
 .contact {
   background: var(--text-light);
 }
 
 .contact-grid {
   display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: flex-start;
+}
 
 /* Make hero stats clearly visible on dark/imagery hero backgrounds */
 .hero-stats .stat-number {
@@ -714,10 +720,6 @@ h3 {
   color: #ffffff !important;
   opacity: 0.95;
   font-size: 0.9rem;
-}
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: flex-start;
 }
 
 .contact-copy h2 {

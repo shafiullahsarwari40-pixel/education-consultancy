@@ -52,7 +52,7 @@ export async function GET(request) {
     .maybeSingle();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Your letter could not be loaded. Please try again.' }, { status: 500 });
   }
 
   const path = application?.acceptance_letter_path;
@@ -66,7 +66,7 @@ export async function GET(request) {
     .download(path);
 
   if (downloadError || !fileBuffer) {
-    return NextResponse.json({ error: downloadError?.message || 'Failed to download file' }, { status: 500 });
+    return NextResponse.json({ error: 'Your letter could not be downloaded. Please try again.' }, { status: 500 });
   }
 
   // Return the file with download headers
@@ -75,6 +75,8 @@ export async function GET(request) {
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'attachment; filename="acceptance-letter.pdf"',
       'Content-Length': fileBuffer.size || fileBuffer.length,
+      'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff',
     },
   });
 }

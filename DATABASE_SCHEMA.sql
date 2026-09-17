@@ -24,59 +24,25 @@ CREATE TABLE IF NOT EXISTS profiles (
   updated_at timestamptz DEFAULT now()
 );
 
--- Step 3: Enable RLS on applications table
-ALTER TABLE applications ENABLE ROW LEVEL SECURITY;
+-- Step 3: Keep sensitive tables server-only. All student and admin reads/writes
+-- go through authenticated API routes that use the service role on the server.
+ALTER TABLE public.applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.applications FORCE ROW LEVEL SECURITY;
 
--- Step 4: Drop existing policies if they exist
-DROP POLICY IF EXISTS "Students can view own application" ON applications;
-DROP POLICY IF EXISTS "Students can insert own application" ON applications;
-DROP POLICY IF EXISTS "Admin can view all applications" ON applications;
-DROP POLICY IF EXISTS "Admin can update applications" ON applications;
+DO $policies$
+DECLARE policy record;
+BEGIN
+  FOR policy IN
+    SELECT policyname FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'applications'
+  LOOP
+    EXECUTE format('DROP POLICY %I ON public.applications', policy.policyname);
+  END LOOP;
+END;
+$policies$;
 
--- Step 5: Create RLS policies for students
-CREATE POLICY "Students can view own application"
-ON applications
-FOR SELECT
-TO authenticated
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Students can insert own application"
-ON applications
-FOR INSERT
-TO authenticated
-WITH CHECK (auth.uid() = user_id);
-
--- Step 6: Create RLS policies for admin
-CREATE POLICY "Admin can view all applications"
-ON applications
-FOR SELECT
-TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM profiles 
-    WHERE profiles.id = auth.uid() 
-    AND profiles.role = 'admin'
-  )
-);
-
-CREATE POLICY "Admin can update all applications"
-ON applications
-FOR UPDATE
-TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM profiles 
-    WHERE profiles.id = auth.uid() 
-    AND profiles.role = 'admin'
-  )
-)
-WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM profiles 
-    WHERE profiles.id = auth.uid() 
-    AND profiles.role = 'admin'
-  )
-);
+REVOKE ALL ON TABLE public.applications FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.applications TO service_role;
 
 -- Step 7: Create constraint for valid statuses
 ALTER TABLE applications
@@ -116,6 +82,13 @@ ON admin_notifications(read);
 CREATE INDEX IF NOT EXISTS idx_admin_notifications_created_at
 ON admin_notifications(created_at DESC);
 
+ALTER TABLE public.admin_notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_notifications FORCE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.admin_notifications FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.admin_notifications TO service_role;
+REVOKE ALL ON SEQUENCE public.admin_notifications_id_seq FROM PUBLIC, anon, authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.admin_notifications_id_seq TO service_role;
+
 CREATE TABLE IF NOT EXISTS homepage_media (
   id bigserial PRIMARY KEY,
   media_type text NOT NULL CHECK (media_type IN ('image', 'video')),
@@ -138,50 +111,77 @@ ON homepage_media(sort_order);
 CREATE INDEX IF NOT EXISTS idx_homepage_media_published
 ON homepage_media(is_published);
 
--- Step 9: Enable RLS on profiles table
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.homepage_media ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.homepage_media FORCE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.homepage_media FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.homepage_media TO service_role;
+REVOKE ALL ON SEQUENCE public.homepage_media_id_seq FROM PUBLIC, anon, authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.homepage_media_id_seq TO service_role;
 
--- Step 10: Create RLS policies for profiles
-DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
-DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
-DROP POLICY IF EXISTS "Admin can view all profiles" ON profiles;
+-- Step 9: Profiles are also server-only and the role column has a second,
+-- trigger-level guard against future policy mistakes.
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles FORCE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own profile"
-ON profiles
-FOR SELECT
-TO authenticated
-USING (auth.uid() = id);
+DO $policies$
+DECLARE policy record;
+BEGIN
+  FOR policy IN
+    SELECT policyname FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'profiles'
+  LOOP
+    EXECUTE format('DROP POLICY %I ON public.profiles', policy.policyname);
+  END LOOP;
+END;
+$policies$;
 
-CREATE POLICY "Users can update own profile"
-ON profiles
-FOR UPDATE
-TO authenticated
-USING (auth.uid() = id)
-WITH CHECK (auth.uid() = id);
+REVOKE ALL ON TABLE public.profiles FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.profiles TO service_role;
 
-CREATE POLICY "Admin can view all profiles"
-ON profiles
-FOR SELECT
-TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM profiles p2
-    WHERE p2.id = auth.uid() 
-    AND p2.role = 'admin'
-  )
-);
+CREATE OR REPLACE FUNCTION public.protect_profile_role()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = pg_catalog
+AS $function$
+BEGIN
+  IF current_user NOT IN ('postgres', 'supabase_admin', 'service_role') THEN
+    IF TG_OP = 'INSERT' AND NEW.role IS DISTINCT FROM 'student' THEN
+      RAISE EXCEPTION 'Profile roles can only be assigned by an administrator'
+        USING ERRCODE = '42501';
+    END IF;
+    IF TG_OP = 'UPDATE' AND NEW.role IS DISTINCT FROM OLD.role THEN
+      RAISE EXCEPTION 'Profile roles can only be changed by an administrator'
+        USING ERRCODE = '42501';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
 
--- Step 11: Create trigger to auto-insert profile on user signup
+DROP TRIGGER IF EXISTS protect_profile_role ON public.profiles;
+CREATE TRIGGER protect_profile_role
+BEFORE INSERT OR UPDATE OF role ON public.profiles
+FOR EACH ROW EXECUTE FUNCTION public.protect_profile_role();
+
+REVOKE ALL ON FUNCTION public.protect_profile_role() FROM PUBLIC, anon, authenticated;
+
+-- Step 10: Create a trusted profile row on signup.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
-AS $$
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $function$
 BEGIN
   INSERT INTO public.profiles (id, email, role)
-  VALUES (new.id, new.email, 'student')
-  ON CONFLICT (id) DO UPDATE SET email = new.email;
-  RETURN new;
+  VALUES (NEW.id, NEW.email, 'student')
+  ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email;
+  RETURN NEW;
 END;
-$$;
+$function$;
+
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 
@@ -189,7 +189,7 @@ CREATE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Step 12: Storage - Create acceptance-letters bucket (if not using public bucket)
+-- Step 11: Storage - Create acceptance-letters bucket (if not using public bucket)
 -- In Supabase Console:
 -- 1. Go to Storage
 -- 2. Click "Create a new bucket"
@@ -197,32 +197,7 @@ FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 -- 4. Make it PRIVATE (not public)
 -- 5. Click Create
 
--- Step 13: Storage RLS policies for acceptance-letters bucket
--- In Supabase Console, go to Storage > acceptance-letters > Policies and add:
--- 
--- SELECT policy:
--- CREATE POLICY "Students can view their own letters"
--- ON storage.objects
--- FOR SELECT
--- TO authenticated
--- USING (
---   bucket_id = 'acceptance-letters' 
---   AND (storage.foldername(name))[1] = auth.uid()::text
--- );
---
--- INSERT policy:
--- CREATE POLICY "Admins can upload letters"
--- ON storage.objects
--- FOR INSERT
--- TO authenticated
--- WITH CHECK (
---   bucket_id = 'acceptance-letters' 
---   AND EXISTS (
---     SELECT 1 FROM profiles 
---     WHERE profiles.id = auth.uid() 
---     AND profiles.role = 'admin'
---   )
--- );
+-- Files are read and written only through authenticated server API routes.
 
 -- ============================================================
 -- MANUAL SETUP REQUIRED:
@@ -234,5 +209,6 @@ FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 --
 -- 4. Go to Storage and create 'acceptance-letters' bucket if needed
 -- 5. Set it to PRIVATE
--- 6. Add the RLS policies shown above
+-- 6. Run scripts/lock-down-sensitive-tables.sql on existing projects and then
+--    execute scripts/verify-live-release.mjs against a production build.
 -- ============================================================

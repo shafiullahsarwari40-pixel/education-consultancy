@@ -1,139 +1,21 @@
-'use client';
+import { Suspense } from "react";
+import StudentAuthClient from "../../../components/StudentAuthClient";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useLanguage } from '../../../lib/LanguageContext';
-import { supabase } from '../../../lib/supabaseClient';
+export const metadata = {
+  title: "Create your student account",
+  robots: { index: false, follow: false },
+};
 
 export default function StudentSignupPage() {
-  const router = useRouter();
-  const { t } = useLanguage();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    (async () => {
-      if (!supabase) return;
-      const { data } = await supabase.auth.getSession();
-      if (data?.session) {
-        router.replace('/student/dashboard');
-      }
-    })();
-  }, [router]);
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    setLoading(true);
-    setMessage('');
-
-    if (!supabase) {
-      const debugInfo = typeof window !== 'undefined' ? window.__SUPABASE_CLIENT_DEBUG : null;
-      setMessage(`Supabase is not configured. Debug: ${JSON.stringify(debugInfo ?? 'N/A')}`);
-      setLoading(false);
-      return;
-    }
-
-    if (!email || !password) {
-      setMessage(t('auth.password_required'));
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback?returnTo=/student/dashboard` : 'https://horizoneducon.com/auth/callback?returnTo=/student/dashboard';
-      const { data, error } = await supabase.auth.signUp(
-        { email, password },
-        { emailRedirectTo: redirectUrl }
-      );
-
-      if (error) {
-        const rawMessage = error.message || '';
-        const isRateLimit = /rate limit|rate limit exceeded|too many requests|email rate limit/i.test(rawMessage);
-        if (isRateLimit) {
-          setMessage('A lot of new users tried to verify. Please try again 1 hour later.');
-        } else {
-          setMessage(rawMessage);
-        }
-        setLoading(false);
-        return;
-      }
-
-      if (data?.session) {
-        router.push('/student/dashboard');
-        return;
-      }
-
-      setMessage(t('auth.success_signup'));
-      setLoading(false);
-    } catch (err) {
-      console.error('[handleSubmit] Exception:', err);
-      setMessage(err?.message || 'An unexpected error occurred. Please try again.');
-      setLoading(false);
-    }
-  }
-
   return (
-    <main className="section" style={{ minHeight: '80vh' }}>
-      <div className="container" style={{ maxWidth: 560, margin: '0 auto' }}>
-        <div className="section-header">
-          <span className="section-label">{t('auth.signup')}</span>
-          <h2>{t('auth.signup')}</h2>
-          <p>Create a secure account with email and password.</p>
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
-          <label>
-            {t('auth.email')}
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              className="form-input"
-              placeholder="you@example.com"
-            />
-          </label>
-
-          <label>
-            {t('auth.password')}
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              className="form-input"
-              placeholder="Create a password"
-            />
-          </label>
-
-          <button type="submit" className="button button-primary button-large" disabled={loading}>
-            {loading ? t('auth.creating') : t('auth.submitSignup')}
-          </button>
-        </form>
-
-        {message && (
-          <div style={{ marginTop: '1rem' }}>
-            <p style={{ color: message.toLowerCase().includes('error') ? '#d32f2f' : '#2e7d32', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-              {message}
-            </p>
-            {typeof window !== 'undefined' && window.__SUPABASE_CLIENT_DEBUG && (
-              <details style={{ marginTop: '1rem', padding: '0.5rem', background: '#f5f5f5', fontSize: '0.75rem', color: '#666' }}>
-                <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>Debug Info</summary>
-                <pre style={{ margin: '0.5rem 0 0 0', overflow: 'auto' }}>
-                  {JSON.stringify(window.__SUPABASE_CLIENT_DEBUG, null, 2)}
-                </pre>
-              </details>
-            )}
-          </div>
-        )}
-
-        <p style={{ marginTop: '1.5rem' }}>
-          {t('auth.alreadyHaveAccount')} <Link href="/student/login">{t('auth.login')}</Link>.
-        </p>
-      </div>
-    </main>
+    <Suspense
+      fallback={
+        <main className="student-experience student-loading" role="status">
+          Preparing your student portal…
+        </main>
+      }
+    >
+      <StudentAuthClient initialMode="signup" />
+    </Suspense>
   );
 }
